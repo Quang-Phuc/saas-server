@@ -1,0 +1,60 @@
+-- INSERT INTO user_role (id, created_by, created_date, last_updated_by, last_updated_date, role)
+-- VALUES (1, 'SYSTEM', '2023-09-21 01:07:24.000000', null, null, 'ADMIN');
+--
+-- INSERT INTO user_role (id, created_by, created_date, last_updated_by, last_updated_date, role)
+-- VALUES (2, 'SYSTEM', '2023-09-21 01:07:24.000000', null, null, 'USER');
+--
+--
+-- --
+--
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (1,'1', 'download', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (2,'2', 'upload', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (3,'3', 'report', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (4,'4', 'like', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (5,'5', 'pay', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (6,'6', 'top up', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+-- INSERT INTO activity (id,activity, name, created_by, created_date, last_updated_by, last_updated_date) VALUES (7,'7', 'update file', 'SYSTEM', '2023-09-21 01:10:39.000000', null, null);
+--
+-- --
+
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (1, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '001', 'Trường cao đẳng đào tạo ngành Giáo dục mầm non', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (2, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '002', 'Đại học', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (3, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '003', 'Trường cao đẳng sư phạm', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (4, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '004', 'Học viện', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (5, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '005', 'Trường đại học', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (6, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '006', 'Trường đào tạo, bồi dưỡng', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (7, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '007', 'Trường sĩ quan', '001');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (8, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '008', 'Viện nghiên cứu', '001');
+--
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (9, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '009', 'Công lập', '002');
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (10, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '010', 'Dân lập', '002');
+--
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (11, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '011', 'Nước ngoài', '002');
+--
+--
+-- INSERT INTO school_type (id, created_by, created_date, id_url, last_updated_by, last_updated_date, code, name, type)
+-- VALUES (12, '1', '2024-01-04 15:54:16.000000', null, null, '2024-01-04 15:54:31.000000', '012', 'Tư thục', '002');
+--
+--
+--
