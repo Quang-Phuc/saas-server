@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Sample Email</title>
+</head>
+<body>
+<span style="font-family: 'Times New Roman'; font-weight: bold"
+      th:style="'font-weight:900'">
+<p th:text="'Xin chào, ' + ${name} + '!'"></p>
+    </span>
+
+<p>Chúng tôi xin gửi lời cảm ơn đến bạn vì đã đăng ký tài khoản tại website của chúng tôi dành cho sinh viên. Đây là bước đầu tiên để trải nghiệm các tính năng và dịch vụ hữu ích mà chúng tôi cung cấp.</p>
+<p>Tài khoản của bạn đã được tạo thành công, và bây giờ bạn cần xác minh địa chỉ email của mình để hoàn tất quá trình đăng ký.</p>
+<p>Để hoàn tất việc đăng ký, vui lòng <a th:href="'' + ${activate} + ''"  style="color: red;">nhấp vào liên kết sau đây để xác minh địa chỉ email của bạn</a>
+
+<p>Sau khi xác minh địa chỉ email của bạn, bạn sẽ có quyền truy cập đầy đủ vào tài khoản của mình và sử dụng tất cả các tính năng của chúng tôi.</p>
+<p>Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ, đừng ngần ngại liên hệ với chúng tôi qua địa chỉ email svshare.uni@gmail.com hoặc số điện thoại  0865052262. Chúng tôi sẽ luôn sẵn sàng để giúp bạn.</p>
+
+<p>Cảm ơn bạn một lần nữa và chúc bạn có những trải nghiệm tích cực trên trang web của chúng tôi!</p>
+
+<p><span style="font-family: 'Times New Roman'; font-weight: bold"
+         th:style="'font-weight:900'">Trân trọng,</span></p>
+
+<p>svshare.xyz</p>
+</body>
+</html>

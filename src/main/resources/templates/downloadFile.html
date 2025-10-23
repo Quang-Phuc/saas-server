@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Sample Email</title>
+</head>
+<body>
+<span style="font-family: 'Times New Roman'; font-weight: bold"
+      th:style="'font-weight:900'">
+<p th:text="'Xin chào, ' + ${name} + '!'"></p>
+    </span>
+
+<p>Chúng tôi xin gửi lời cảm ơn chân thành đến bạn vì đã đóng góp tài liệu quý báu lên trang web của chúng tôi. Chúng tôi tin rằng sự chia sẻ này sẽ mang lại giá trị lớn.</p>
+
+<p>
+    Chúng tôi xin thông báo tài liệu của bạn vừa được tải và bạn nhận được
+    <span style="color: red;">[[${money}]] Xu.</span>
+</p>
+<p>Số Xu này bạn có thể rút hoặc dùng để trả cho dịch vụ của <a href="https://svshare.xyz" th:href="@{https://svshare.xyz}">https://svshare.xyz</a>. Để kiểm tra số Xu hiện tại của bạn và khám phá các cơ hội đổi lấy, vui lòng truy cập <a href="https://svshare.xyz/user/coins" th:href="@{https://svshare.xyz/user/coins}">https://svshare.xyz/user/coins</a>.</p>
+
+<p>Chúng tôi đánh giá cao sự đóng góp của bạn và hy vọng rằng chia sẻ tài liệu sẽ làm cho trang web của chúng tôi trở nên phong phú và hữu ích hơn cho cộng đồng. Nếu bạn có bất kỳ ý kiến hoặc góp ý nào, đừng ngần ngại liên hệ với chúng tôi qua địa chỉ email hỗ trợ svshare.uni@gmail.com.</p>
+
+<p>Cảm ơn bạn một lần nữa và chúc bạn có những trải nghiệm tích cực trên trang web của chúng tôi!</p>
+
+<p><span style="font-family: 'Times New Roman'; font-weight: bold"
+         th:style="'font-weight:900'">Trân trọng,</span></p>
+
+<p>svshare.xyz</p>
+</body>
+</html>
