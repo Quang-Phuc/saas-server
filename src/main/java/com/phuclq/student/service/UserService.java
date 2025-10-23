@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserService {
-    User registryUser(UserAccountDTO accountDTO,Boolean isEnable, Boolean isFacebook);
+    User registryUser(RegisterRequest accountDTO);
 
     User save(UserSaveDTO accountDTO) throws IOException;
 

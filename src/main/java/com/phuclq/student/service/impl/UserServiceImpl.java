@@ -2,12 +2,11 @@ package com.phuclq.student.service.impl;
 
 import com.phuclq.student.config.JwtTokenUtil;
 import com.phuclq.student.dao.UsersDao;
-import com.phuclq.student.domain.File;
-import com.phuclq.student.domain.RefreshToken;
-import com.phuclq.student.domain.TokenFireBase;
-import com.phuclq.student.domain.User;
+import com.phuclq.student.domain.*;
 import com.phuclq.student.dto.*;
 import com.phuclq.student.exception.BusinessHandleException;
+import com.phuclq.student.repository.LicenseRepository;
+import com.phuclq.student.repository.StoreRepository;
 import com.phuclq.student.repository.TokenFireBaseRepository;
 import com.phuclq.student.repository.UserRepository;
 import com.phuclq.student.service.*;
@@ -53,8 +52,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
-    private ConfirmationTokenService confirmationTokenService;
-    @Autowired
     private EmailSenderService emailSenderService;
     @Autowired
     private AttachmentService attachmentService;
@@ -66,41 +63,61 @@ public class UserServiceImpl implements UserService {
     private JwtTokenUtil jwtTokenUtil;
     @Autowired
     private TokenFireBaseRepository tokenFireBaseRepository;
+    private final StoreRepository storeRepository;
+    private final LicenseRepository licenseRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
     @Transactional
-    public User registryUser(UserAccountDTO accountDTO,Boolean isEnable, Boolean isFacebook) {
+    public User registryUser(RegisterRequest request) {
 
-        accountDTO.setUserName(accountDTO.getEmail());
-        accountDTO.setFullName(accountDTO.getEmail());
-        if (!isFacebook) {
-            User existingUser = findUserByEmail(accountDTO.getEmail());
-            if (existingUser != null) {
-                throw new BusinessHandleException("SS002");
-            }
+        // 1. Kiểm tra dữ liệu đầu vào
+        if (request.getPhone() == null || request.getPassword() == null || request.getStoreName() == null) {
+            throw new RuntimeException("Thiếu thông tin bắt buộc");
         }
 
-        User user = new User();
-        BeanUtils.copyProperties(accountDTO, user);
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        String hashedPassword = passwordEncoder.encode(accountDTO.getPassword());
-        user.setPassword(hashedPassword);
-        user.setIsEnable(isEnable);
-        user.setIsDeleted(false);
-        user.setUserFaceId(accountDTO.getUserID());
-        user.setRoleId(2);
-        user.setReferralCode(generateReferralCode());
-        user.setReferredBy(accountDTO.getReferredBy());
-        User saved = saveAndFlushUser(user);
+        // 2. Kiểm tra trùng số điện thoại
+        userRepository.findByPhone(request.getPhone())
+                .ifPresent(u -> { throw new RuntimeException("Số điện thoại đã được đăng ký"); });
 
-        if (!isFacebook) {
-            confirmationTokenService.sendEmailRegister(saved);
-        }
-        return  user;
+        // 3. Tạo cửa hàng
+        Store store = new Store();
+        store.setName(request.getStoreName());
+        storeRepository.save(store);
+
+        // 4. Mã hóa mật khẩu
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+
+        // 5. Tạo chủ tiệm (user)
+        User owner = new User();
+        owner.setFullName(request.getStoreName());
+        owner.setPhone(request.getPhone());
+        owner.setPassword(hashedPassword);
+        owner.setRole("OWNER");
+        owner.setStore(store);
+        userRepository.save(owner);
+
+        // 6. Tạo license mặc định (Free Trial 30 ngày)
+        License license = new License();
+        license.setStore(store);
+        license.setPlan("TRIAL");
+        license.setStartAt(LocalDate.now());
+        license.setExpiredAt(LocalDate.now().plusDays(30));
+        license.setStatus("ACTIVE");
+        licenseRepository.save(license);
+
+        // 7. Trả response
+        return RegisterResponse.builder()
+                .storeId(store.getId())
+                .storeName(store.getName())
+                .ownerPhone(owner.getPhone())
+                .plan(license.getPlan())
+                .expiredAt(license.getExpiredAt().toString())
+                .build();
     }
+
 
     @Transactional
     public User saveAndFlushUser(User user) {

@@ -39,9 +39,9 @@ public class UserController {
     private RestEntityResponse restEntityRes;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registryUser(@RequestBody @Valid UserAccountDTO accountDTO) {
+    public ResponseEntity<?> registryUser(@RequestBody @Valid RegisterRequest accountDTO) {
 
-        User user = userService.registryUser(accountDTO,false,false);
+        User user = userService.registryUser(accountDTO);
         return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(user.getUserName()).getResponse();
     }
 

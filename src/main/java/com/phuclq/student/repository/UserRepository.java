@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
@@ -28,6 +29,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     User findUserByUserFaceIdAndIsDeletedFalse(String userId);
 
     User findByUserFaceId(String userId);
+
+    Optional<User> findByPhone(String phone);
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     User findUserByEmailIgnoreCaseAndIsDeletedFalseAndUserFaceIdIsNull(String email);
