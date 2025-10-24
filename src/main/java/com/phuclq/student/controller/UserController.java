@@ -38,11 +38,11 @@ public class UserController {
     @Autowired
     private RestEntityResponse restEntityRes;
 
-    @PostMapping("/register")
+    @PostMapping("/auth/register")
     public ResponseEntity<?> registryUser(@RequestBody @Valid RegisterRequest accountDTO) {
 
-        User user = userService.registryUser(accountDTO);
-        return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(user.getUserName()).getResponse();
+        RegisterResponse user = userService.registryUser(accountDTO);
+        return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(user).getResponse();
     }
 
 

@@ -5,10 +5,7 @@ import com.phuclq.student.dao.UsersDao;
 import com.phuclq.student.domain.*;
 import com.phuclq.student.dto.*;
 import com.phuclq.student.exception.BusinessHandleException;
-import com.phuclq.student.repository.LicenseRepository;
-import com.phuclq.student.repository.StoreRepository;
-import com.phuclq.student.repository.TokenFireBaseRepository;
-import com.phuclq.student.repository.UserRepository;
+import com.phuclq.student.repository.*;
 import com.phuclq.student.service.*;
 import com.phuclq.student.types.FileType;
 import com.phuclq.student.utils.DateTimeUtils;
@@ -34,6 +31,7 @@ import org.thymeleaf.context.Context;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,57 +62,76 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private TokenFireBaseRepository tokenFireBaseRepository;
     private final StoreRepository storeRepository;
-    private final LicenseRepository licenseRepository;
+    private final LicensePackageRepository licensePackageRepository;
+    private final UserLicenseRepository userLicenseRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
     @Transactional
-    public User registryUser(RegisterRequest request) {
+    public RegisterResponse registryUser(RegisterRequest request) {
 
-        // 1. Kiểm tra dữ liệu đầu vào
+        // 1️⃣ Kiểm tra dữ liệu đầu vào
         if (request.getPhone() == null || request.getPassword() == null || request.getStoreName() == null) {
-            throw new RuntimeException("Thiếu thông tin bắt buộc");
+            throw new BusinessHandleException("SS017");
         }
 
-        // 2. Kiểm tra trùng số điện thoại
+        // 2️⃣ Kiểm tra trùng số điện thoại
         userRepository.findByPhone(request.getPhone())
-                .ifPresent(u -> { throw new RuntimeException("Số điện thoại đã được đăng ký"); });
+                .ifPresent(u -> { throw new BusinessHandleException("SS017"); });
 
-        // 3. Tạo cửa hàng
+        // 3️⃣ Tạo cửa hàng
         Store store = new Store();
         store.setName(request.getStoreName());
-        storeRepository.save(store);
+        store.setAddress("Chưa cập nhật");
+        Store savedStore = storeRepository.saveAndFlush(store);
 
-        // 4. Mã hóa mật khẩu
+        // 4️⃣ Mã hóa mật khẩu
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
-        // 5. Tạo chủ tiệm (user)
+        // 5️⃣ Tạo chủ tiệm (User)
         User owner = new User();
         owner.setFullName(request.getStoreName());
         owner.setPhone(request.getPhone());
         owner.setPassword(hashedPassword);
-        owner.setRole("OWNER");
-        owner.setStore(store);
+        owner.setStoreId(savedStore.getId());
+        owner.setRoleId(1); // 1 = Chủ tiệm
         userRepository.save(owner);
 
-        // 6. Tạo license mặc định (Free Trial 30 ngày)
-        License license = new License();
-        license.setStore(store);
-        license.setPlan("TRIAL");
-        license.setStartAt(LocalDate.now());
-        license.setExpiredAt(LocalDate.now().plusDays(30));
-        license.setStatus("ACTIVE");
-        licenseRepository.save(license);
+        // 6️⃣ Cấp License mặc định (Trial 30 ngày)
+        LocalDate start = LocalDate.now();
+        LocalDate expire = start.plusDays(30);
 
-        // 7. Trả response
+        // Nếu có sẵn gói trial trong DB thì gán, nếu chưa thì bỏ qua
+        LicensePackage trialPackage = licensePackageRepository.findByName("TRIAL")
+                .orElseGet(() -> {
+                    LicensePackage pkg = new LicensePackage();
+                    pkg.setName("TRIAL");
+                    pkg.setPrice(0D);
+                    pkg.setDiscount(0D);
+                    pkg.setMaxStore(3);
+                    pkg.setMaxUserPerStore(10);
+                    pkg.setDurationDays(30);
+                    return licensePackageRepository.save(pkg);
+                });
+
+        UserLicense userLicense = new UserLicense();
+        userLicense.setUserId(owner.getId());
+        userLicense.setLicensePackageId(trialPackage.getId());
+        userLicense.setPurchaseDate(start);
+        userLicense.setExpiryDate(expire);
+        userLicense.setFinalPrice(0D);
+        userLicense.setStatus("ACTIVE");
+        userLicenseRepository.save(userLicense);
+
+        // 7️⃣ Trả response
         return RegisterResponse.builder()
-                .storeId(store.getId())
-                .storeName(store.getName())
+                .storeId(savedStore.getId())
+                .storeName(savedStore.getName())
                 .ownerPhone(owner.getPhone())
-                .plan(license.getPlan())
-                .expiredAt(license.getExpiredAt().toString())
+                .plan(trialPackage.getName())
+                .expiredAt(expire.toString())
                 .build();
     }
 
@@ -444,7 +461,6 @@ public class UserServiceImpl implements UserService {
                 accountDTO.setUserName(loginRequest.getName());
                 accountDTO.setFullName(loginRequest.getName());
                 isFace = true;
-                user = registryUser(accountDTO, true, true);
             }
                 loginRequest.setEmail(user.getUserFaceId());
                 loginRequest.setPassword(user.getUserFaceId());

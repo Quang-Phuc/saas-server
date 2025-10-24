@@ -158,13 +158,6 @@
         </dependency>
 
         <dependency>
-
-            <groupId>com.aspose</groupId>
-            <artifactId>aspose-words</artifactId>
-            <version>20.1</version>
-            <classifier>jdk17</classifier>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>

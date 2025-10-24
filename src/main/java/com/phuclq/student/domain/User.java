@@ -62,6 +62,8 @@ public class User extends Auditable<String> {
     @Column(name = "REFERRED_BY")
     private String referredBy;
 
+    @Column(name = "STORE_ID")
+    private Long storeId;
 
     @Override
     public String toString() {
