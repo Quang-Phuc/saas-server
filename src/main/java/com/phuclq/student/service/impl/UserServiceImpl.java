@@ -101,6 +101,8 @@ public class UserServiceImpl implements UserService {
         owner.setPhone(request.getPhone());
         owner.setPassword(hashedPassword);
         owner.setStoreId(savedStore.getId());
+        owner.setIsDeleted(false);
+        owner.setIsEnable(false);
         owner.setRoleId(RoleConstant.OWNER); // 1 = Chủ tiệm
         userRepository.save(owner);
 
@@ -443,17 +445,19 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public JwtResponse login(JwtRequest loginRequest) throws Exception {
+        if(Objects.nonNull(loginRequest.getPhone())){
+            loginRequest.setUserName(loginRequest.getPhone());
+        }
         // 1️⃣ Xác thực tài khoản (email + password)
-        authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+        authenticate(loginRequest.getUserName(), loginRequest.getPassword());
 
         // 2️⃣ Lấy thông tin user
-        User user = userRepository.findByUserName(loginRequest.getUserName()).orElseThrow(() -> new BusinessHandleException("SS001"));
+        User user = userRepository.findByUserNameIgnoreCaseAndIsDeletedFalse(loginRequest.getUserName()).orElseThrow(() -> new BusinessHandleException("SS001"));
 
 
         // 3️⃣ Sinh JWT và refresh token
-        authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUserName());
 
         String jwt = jwtTokenUtil.generateToken(userDetails);
 

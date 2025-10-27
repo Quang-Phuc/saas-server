@@ -19,7 +19,7 @@ import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @CrossOrigin
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 public class JwtAuthenticationController {
 
     @Autowired
