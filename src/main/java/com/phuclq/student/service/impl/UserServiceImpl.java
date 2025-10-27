@@ -38,6 +38,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.itextpdf.styledxmlparser.css.CommonCssConstants.ACTIVE;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -76,12 +78,12 @@ public class UserServiceImpl implements UserService {
 
         // 1️⃣ Kiểm tra dữ liệu đầu vào
         if (request.getPhone() == null || request.getPassword() == null || request.getStoreName() == null) {
-            throw new BusinessHandleException("SS017");
+            throw new BusinessHandleException("SS006"); // Thiếu thông tin đăng ký
         }
 
         // 2️⃣ Kiểm tra trùng số điện thoại
         userRepository.findByPhone(request.getPhone()).ifPresent(u -> {
-            throw new BusinessHandleException("SS017");
+            throw new BusinessHandleException("SS007"); // Số điện thoại đã tồn tại
         });
 
         // 3️⃣ Tạo cửa hàng
@@ -99,14 +101,13 @@ public class UserServiceImpl implements UserService {
         owner.setPhone(request.getPhone());
         owner.setPassword(hashedPassword);
         owner.setStoreId(savedStore.getId());
-        owner.setRoleId(1); // 1 = Chủ tiệm
+        owner.setRoleId(RoleConstant.OWNER); // 1 = Chủ tiệm
         userRepository.save(owner);
 
         // 6️⃣ Cấp License mặc định (Trial 30 ngày)
         LocalDate start = LocalDate.now();
         LocalDate expire = start.plusDays(30);
 
-        // Nếu có sẵn gói trial trong DB thì gán, nếu chưa thì bỏ qua
         LicensePackage trialPackage = licensePackageRepository.findByName("TRIAL").orElseGet(() -> {
             LicensePackage pkg = new LicensePackage();
             pkg.setName("TRIAL");
@@ -128,8 +129,15 @@ public class UserServiceImpl implements UserService {
         userLicenseRepository.save(userLicense);
 
         // 7️⃣ Trả response
-        return RegisterResponse.builder().storeId(savedStore.getId()).storeName(savedStore.getName()).ownerPhone(owner.getPhone()).plan(trialPackage.getName()).expiredAt(expire.toString()).build();
+        return RegisterResponse.builder()
+                .storeId(savedStore.getId())
+                .storeName(savedStore.getName())
+                .ownerPhone(owner.getPhone())
+                .plan(trialPackage.getName())
+                .expiredAt(expire.toString())
+                .build();
     }
+
 
 
     @Transactional
@@ -439,7 +447,7 @@ public class UserServiceImpl implements UserService {
         authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
         // 2️⃣ Lấy thông tin user
-        User user = userRepository.findByUserName(loginRequest.getUserName()).orElseThrow(() -> new BusinessHandleException("SS017"));
+        User user = userRepository.findByUserName(loginRequest.getUserName()).orElseThrow(() -> new BusinessHandleException("SS001"));
 
 
         // 3️⃣ Sinh JWT và refresh token
@@ -478,11 +486,11 @@ public class UserServiceImpl implements UserService {
 
         } else {
             // ✅ Các vai trò khác → check license cửa hàng
-            Store store = storeRepository.findById(user.getStoreId()).orElseThrow(() -> new BusinessHandleException("SS017"));
+            Store store = storeRepository.findById(user.getStoreId()).orElseThrow(() -> new BusinessHandleException("SS002"));
 
-            List<UserLicense> licenses = userLicenseRepository.findByUserIdAndStatusOrderByIdDesc(store.getId());
+            List<UserLicense> licenses = userLicenseRepository.findByUserIdAndStatusOrderByIdDesc(store.getId(),"ACTIVE");
             if (Objects.isNull(licenses)) {
-                throw new BusinessHandleException("SS017");
+                throw new BusinessHandleException("SS003");
             }
             UserLicense license = licenses.get(0);
 
@@ -491,9 +499,9 @@ public class UserServiceImpl implements UserService {
             if (isExpired) {
 
                 if (user.getRoleId() == RoleConstant.OWNER) {
-                    throw new BusinessHandleException("SS017");
+                    throw new BusinessHandleException("SS004");
                 } else if (user.getRoleId() == RoleConstant.STAFF) {
-                    throw new BusinessHandleException("SS017");
+                    throw new BusinessHandleException("SS005");
                 }
             }
             loginRes = new JwtResponse(

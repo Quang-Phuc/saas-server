@@ -9,7 +9,6 @@ import java.util.List;
 @Repository
 public interface UserLicenseRepository extends JpaRepository<UserLicense, Long> {
 
-    List<UserLicense> findByUserIdAndStatusOrderByIdDesc(Long userId);
+    List<UserLicense> findByUserIdAndStatusOrderByIdDesc(Long userId,String status);
 
-    UserLicense findTopByUserIdOrderByPurchaseDateDesc(Long userId);
 }

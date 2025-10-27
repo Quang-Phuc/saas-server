@@ -15,7 +15,7 @@ public class JwtRequest implements Serializable {
     private String password;
     private String tokenFireBase;
     private Boolean isDelete;
-    private Boolean type;
+    private String type;
     private String userName;
 
     public JwtRequest(String email, String password, Boolean isDelete) {

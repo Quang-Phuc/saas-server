@@ -25,4 +25,13 @@ public class LicenseHistory extends Auditable<String> {
 
     @Column
     private String note;
+
+    @Column(name = "license_package_id", nullable = false)
+    private Long licensePackageId;
+
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
+
+    @Column(name = "status", nullable = false)
+    private Integer status;
 }
