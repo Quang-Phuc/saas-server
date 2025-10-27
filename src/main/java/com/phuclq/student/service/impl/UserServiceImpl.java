@@ -1,5 +1,6 @@
 package com.phuclq.student.service.impl;
 
+import com.google.api.gax.rpc.ApiException;
 import com.phuclq.student.config.JwtTokenUtil;
 import com.phuclq.student.dao.UsersDao;
 import com.phuclq.student.domain.*;
@@ -8,6 +9,7 @@ import com.phuclq.student.exception.BusinessHandleException;
 import com.phuclq.student.repository.*;
 import com.phuclq.student.service.*;
 import com.phuclq.student.types.FileType;
+import com.phuclq.student.types.RoleConstant;
 import com.phuclq.student.utils.DateTimeUtils;
 import com.phuclq.student.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,9 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserServiceImpl implements UserService {
 
+    private final StoreRepository storeRepository;
+    private final LicensePackageRepository licensePackageRepository;
+    private final UserLicenseRepository userLicenseRepository;
     @Autowired
     UsersDao usersDao;
     @Autowired
@@ -61,10 +67,6 @@ public class UserServiceImpl implements UserService {
     private JwtTokenUtil jwtTokenUtil;
     @Autowired
     private TokenFireBaseRepository tokenFireBaseRepository;
-    private final StoreRepository storeRepository;
-    private final LicensePackageRepository licensePackageRepository;
-    private final UserLicenseRepository userLicenseRepository;
-
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -78,8 +80,9 @@ public class UserServiceImpl implements UserService {
         }
 
         // 2️⃣ Kiểm tra trùng số điện thoại
-        userRepository.findByPhone(request.getPhone())
-                .ifPresent(u -> { throw new BusinessHandleException("SS017"); });
+        userRepository.findByPhone(request.getPhone()).ifPresent(u -> {
+            throw new BusinessHandleException("SS017");
+        });
 
         // 3️⃣ Tạo cửa hàng
         Store store = new Store();
@@ -104,17 +107,16 @@ public class UserServiceImpl implements UserService {
         LocalDate expire = start.plusDays(30);
 
         // Nếu có sẵn gói trial trong DB thì gán, nếu chưa thì bỏ qua
-        LicensePackage trialPackage = licensePackageRepository.findByName("TRIAL")
-                .orElseGet(() -> {
-                    LicensePackage pkg = new LicensePackage();
-                    pkg.setName("TRIAL");
-                    pkg.setPrice(0D);
-                    pkg.setDiscount(0D);
-                    pkg.setMaxStore(3);
-                    pkg.setMaxUserPerStore(10);
-                    pkg.setDurationDays(30);
-                    return licensePackageRepository.save(pkg);
-                });
+        LicensePackage trialPackage = licensePackageRepository.findByName("TRIAL").orElseGet(() -> {
+            LicensePackage pkg = new LicensePackage();
+            pkg.setName("TRIAL");
+            pkg.setPrice(0D);
+            pkg.setDiscount(0D);
+            pkg.setMaxStore(3);
+            pkg.setMaxUserPerStore(10);
+            pkg.setDurationDays(30);
+            return licensePackageRepository.save(pkg);
+        });
 
         UserLicense userLicense = new UserLicense();
         userLicense.setUserId(owner.getId());
@@ -126,13 +128,7 @@ public class UserServiceImpl implements UserService {
         userLicenseRepository.save(userLicense);
 
         // 7️⃣ Trả response
-        return RegisterResponse.builder()
-                .storeId(savedStore.getId())
-                .storeName(savedStore.getName())
-                .ownerPhone(owner.getPhone())
-                .plan(trialPackage.getName())
-                .expiredAt(expire.toString())
-                .build();
+        return RegisterResponse.builder().storeId(savedStore.getId()).storeName(savedStore.getName()).ownerPhone(owner.getPhone()).plan(trialPackage.getName()).expiredAt(expire.toString()).build();
     }
 
 
@@ -151,12 +147,12 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    public  String generateReferralCode() {
+    public String generateReferralCode() {
         User topByOrderByIdDesc = userRepository.findTopByOrderByIdDesc();
-        String idString = String.valueOf(Objects.nonNull(topByOrderByIdDesc)? topByOrderByIdDesc.getId():0);
+        String idString = String.valueOf(Objects.nonNull(topByOrderByIdDesc) ? topByOrderByIdDesc.getId() : 0);
 
         StringBuilder stringBuffer = new StringBuilder();
-        for(int i = 0;i<= 4- idString.length();i++){
+        for (int i = 0; i <= 4 - idString.length(); i++) {
             stringBuffer.append("0");
         }
         stringBuffer.append(idString);
@@ -192,9 +188,7 @@ public class UserServiceImpl implements UserService {
         Page<UserAdminResult> fileResultDto = usersDao.listUserAdmin(request, pageable);
         UserResultDto userResultDto = new UserResultDto();
         userResultDto.setList(fileResultDto.getContent());
-        PaginationModel paginationModel = new PaginationModel(
-                fileResultDto.getPageable().getPageNumber(), fileResultDto.getPageable().getPageSize(),
-                (int) fileResultDto.getTotalElements());
+        PaginationModel paginationModel = new PaginationModel(fileResultDto.getPageable().getPageNumber(), fileResultDto.getPageable().getPageSize(), (int) fileResultDto.getTotalElements());
         userResultDto.setPaginationModel(paginationModel);
         return userResultDto;
     }
@@ -223,8 +217,7 @@ public class UserServiceImpl implements UserService {
                     if (Objects.isNull(user)) {
                         user = userRepository.findUserByEmailIgnoreCaseAndIsDeletedFalseAndUserFaceIdIsNull(email);
                     }
-                } else
-                    return user;
+                } else return user;
             }
             return user;
         } catch (Exception e) {
@@ -239,8 +232,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<User> findUserByUserNameAndEmailAndPhone(UsersSearchRequest usersSearchRequest,
-                                                         Pageable pageable) {
+    public Page<User> findUserByUserNameAndEmailAndPhone(UsersSearchRequest usersSearchRequest, Pageable pageable) {
         Date dateFrom = null;
         Date dateTo = null;
         String dateFromStr = usersSearchRequest.getStartDate();
@@ -255,11 +247,9 @@ public class UserServiceImpl implements UserService {
             dateTo = DateTimeUtils.convertStringDateYYmmdd(dateToStr);
             userPage = userRepository.findUserByUserNameAndEmailAndTime
 
-                    (usersSearchRequest.getUserName(), usersSearchRequest.getEmail(),
-                            usersSearchRequest.getPhone(), dateFrom, dateTo, pageable);
+                    (usersSearchRequest.getUserName(), usersSearchRequest.getEmail(), usersSearchRequest.getPhone(), dateFrom, dateTo, pageable);
         } else {
-            userPage = userRepository.findUserByUserNameAndEmail(usersSearchRequest.getUserName(),
-                    usersSearchRequest.getEmail(), usersSearchRequest.getPhone(), pageable);
+            userPage = userRepository.findUserByUserNameAndEmail(usersSearchRequest.getUserName(), usersSearchRequest.getEmail(), usersSearchRequest.getPhone(), pageable);
         }
 
         return userPage;
@@ -280,14 +270,14 @@ public class UserServiceImpl implements UserService {
         sendMailDto.setPassword(pass);
         sendMailDto.setSub(sub);
         sendMailDto.setEmail(existingUser.getEmail());
-       sendMail(sendMailDto);
+        sendMail(sendMailDto);
     }
 
     void sendMail(SendMailDto sendMailDto) {
         Context context = new Context();
         context.setVariable("name", sendMailDto.getName());
         context.setVariable("pass", sendMailDto.getPassword());
-        emailSenderService.sendHtmlMessage(sendMailDto.getEmail(), sendMailDto.getSub(), context,"forgotPassword.html");
+        emailSenderService.sendHtmlMessage(sendMailDto.getEmail(), sendMailDto.getSub(), context, "forgotPassword.html");
     }
 
     @Override
@@ -381,8 +371,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDTO> getUsersByRole(Integer roleId) {
         List<User> userList = userRepository.findUserByRoleIdAndIsDeleted(roleId, false);
-        return userList.stream().map(UserDTO::new)
-                .collect(Collectors.toList());
+        return userList.stream().map(UserDTO::new).collect(Collectors.toList());
     }
 
     @Override
@@ -439,56 +428,89 @@ public class UserServiceImpl implements UserService {
             userLogin.setPhone(accountDTO.getPhone().trim());
         }
         if (Objects.nonNull(accountDTO.getFiles())) {
-            attachmentService.createListAttachmentsFromBase64S3(
-                    accountDTO.getFiles(), userLogin.getId(), userLogin.getId(), true);
+            attachmentService.createListAttachmentsFromBase64S3(accountDTO.getFiles(), userLogin.getId(), userLogin.getId(), true);
         }
     }
 
     @Override
     @Transactional
     public JwtResponse login(JwtRequest loginRequest) throws Exception {
+        // 1️⃣ Xác thực tài khoản (email + password)
+        authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
-        boolean isFace = false;
-        String emailFace = loginRequest.getEmail();
-        if( Objects.nonNull(loginRequest.getUserID())){
-            User user = userRepository.findUserByUserFaceIdAndIsDeletedFalse(loginRequest.getUserID());
-            if(Objects.isNull(user)){
-                UserAccountDTO accountDTO = new UserAccountDTO();
-                accountDTO.setEmail(loginRequest.getEmail());
-                accountDTO.setPassword(loginRequest.getPassword());
-                accountDTO.setRePassword(loginRequest.getPassword());
-                accountDTO.setUserID(loginRequest.getUserID());
-                accountDTO.setUserName(loginRequest.getName());
-                accountDTO.setFullName(loginRequest.getName());
-                isFace = true;
-            }
-                loginRequest.setEmail(user.getUserFaceId());
-                loginRequest.setPassword(user.getUserFaceId());
+        // 2️⃣ Lấy thông tin user
+        User user = userRepository.findByUserName(loginRequest.getUserName()).orElseThrow(() -> new BusinessHandleException("SS017"));
 
-        }
 
-        authenticate(loginRequest.getEmail(),
-                loginRequest.getPassword());
+        // 3️⃣ Sinh JWT và refresh token
+        authenticate(loginRequest.getEmail(), loginRequest.getPassword());
 
-        final UserDetails userDetails = userDetailsService
-                .loadUserByUsername(loginRequest.getEmail());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getEmail());
 
         String jwt = jwtTokenUtil.generateToken(userDetails);
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
 
-        User user = new User();
-        if(Objects.nonNull(loginRequest.getUserID())) {
-             user = userRepository.findByUserFaceId(loginRequest.getEmail());
-        }else {
-            user = userRepository.findUserByEmailIgnoreCaseAndIsDeletedFalseAndUserFaceIdIsNull(loginRequest.getEmail());
-        }
+        // 4️⃣ Nếu có token Firebase → lưu lại
         if (Objects.nonNull(loginRequest.getTokenFireBase())) {
             tokenFireBaseRepository.deleteAll(tokenFireBaseRepository.findAllByToken(loginRequest.getTokenFireBase()));
             tokenFireBaseRepository.save(new TokenFireBase(user.getId(), loginRequest.getTokenFireBase(), null));
         }
-        return new JwtResponse(jwt, refreshToken.getToken(), userDetails.getUsername(), null,isFace,emailFace);
+
+        // 5️⃣ Tạo response
+
+        JwtResponse loginRes = new JwtResponse();
+        // 6️⃣ Xử lý theo vai trò (Admin / Chủ quán / Nhân viên)
+        if (user.getRoleId() == RoleConstant.ADMIN) {
+            // ✅ Admin → login bình thường
+            loginRes = new JwtResponse(
+                    jwt,
+                    refreshToken.getToken(),
+                    userDetails.getUsername(),
+                    Stream.of(user.getRoleId())
+                            .map(Object::toString)
+                            .collect(Collectors.toList()),
+                    null,
+                    null
+            );
+
+
+
+        } else {
+            // ✅ Các vai trò khác → check license cửa hàng
+            Store store = storeRepository.findById(user.getStoreId()).orElseThrow(() -> new BusinessHandleException("SS017"));
+
+            List<UserLicense> licenses = userLicenseRepository.findByUserIdAndStatusOrderByIdDesc(store.getId());
+            if (Objects.isNull(licenses)) {
+                throw new BusinessHandleException("SS017");
+            }
+            UserLicense license = licenses.get(0);
+
+            boolean isExpired = license.isExpired();
+
+            if (isExpired) {
+
+                if (user.getRoleId() == RoleConstant.OWNER) {
+                    throw new BusinessHandleException("SS017");
+                } else if (user.getRoleId() == RoleConstant.STAFF) {
+                    throw new BusinessHandleException("SS017");
+                }
+            }
+            loginRes = new JwtResponse(
+                    jwt,
+                    refreshToken.getToken(),
+                    userDetails.getUsername(),
+                    Stream.of(user.getRoleId())
+                            .map(Object::toString)
+                            .collect(Collectors.toList()),
+                    null,
+                    null
+            );
+        }
+
+        return loginRes;
     }
+
 
     private String authenticate(String email, String password) throws Exception {
         try {

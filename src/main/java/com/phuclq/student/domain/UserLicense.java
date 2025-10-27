@@ -32,4 +32,8 @@ public class UserLicense extends Auditable<String> {
 
     @Column(length = 20)
     private String status; // ACTIVE, EXPIRED, DOWNGRADED...
+
+    public boolean isExpired() {
+        return expiryDate != null && expiryDate.isBefore(LocalDate.now());
+    }
 }

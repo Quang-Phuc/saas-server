@@ -29,6 +29,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     User findUserByUserFaceIdAndIsDeletedFalse(String userId);
 
     User findByUserFaceId(String userId);
+    Optional<User> findByUserName(String userName);
 
     Optional<User> findByPhone(String phone);
 
