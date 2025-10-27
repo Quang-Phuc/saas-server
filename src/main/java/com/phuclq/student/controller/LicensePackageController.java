@@ -1,7 +1,6 @@
 package com.phuclq.student.controller;
 
 import com.phuclq.student.component.RestEntityResponse;
-import com.phuclq.student.domain.CategoryBLog;
 import com.phuclq.student.domain.LicensePackage;
 import com.phuclq.student.dto.QRRequest;
 import com.phuclq.student.dto.QRResponse;
@@ -13,9 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -60,7 +57,7 @@ public class LicensePackageController {
     {
         try {
 
-            QRResponse base64 = licensePayService.generateQrBase64(request.getAmount(),request.getContent());
+            QRResponse base64 = licensePayService.generateQrBase64(request.getPrice(),request.getContent());
             return ResponseEntity.ok(base64);
         } catch (Exception e) {
             e.printStackTrace();

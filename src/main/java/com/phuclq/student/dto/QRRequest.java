@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class QRRequest {
-    private int amount;
+    private int price;
     private String content;
 }

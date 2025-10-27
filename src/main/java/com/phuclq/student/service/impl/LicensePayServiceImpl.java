@@ -13,6 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Service
@@ -27,14 +29,20 @@ public class LicensePayServiceImpl implements LicensePayService {
 
 
         // Tạo URL QR
+        String bankId = properties.getBankId();
+        String accountNo = properties.getAccountNo();
+        String template = properties.getTemplate();
+        String accountName = URLEncoder.encode(properties.getAccountName(), StandardCharsets.UTF_8.toString());
+        String addInfo = URLEncoder.encode(content, StandardCharsets.UTF_8.toString());
+
         String urlStr = String.format(
                 "https://img.vietqr.io/image/%s-%s-%s.png?amount=%d&addInfo=%s&accountName=%s",
-                properties.getBankId(),
-                properties.getAccountNo(),
-                properties.getTemplate(),
+                bankId,
+                accountNo,
+                template,
                 price,
-                content,
-                properties.getAccountName().replace(" ", "%20") // encode tên
+                addInfo,
+                accountName
         );
 
         System.out.println("Đang tải QR từ URL: " + urlStr);
@@ -68,7 +76,7 @@ public class LicensePayServiceImpl implements LicensePayService {
         byte[] imageBytes = baos.toByteArray();
 
         QRResponse qrResponse = new QRResponse();
-        qrResponse.setImage(Base64.getEncoder().encodeToString(imageBytes));
+        qrResponse.setBase64Data(Base64.getEncoder().encodeToString(imageBytes));
         return qrResponse;
     }
 
