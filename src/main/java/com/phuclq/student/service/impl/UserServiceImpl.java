@@ -1,6 +1,5 @@
 package com.phuclq.student.service.impl;
 
-import com.google.api.gax.rpc.ApiException;
 import com.phuclq.student.config.JwtTokenUtil;
 import com.phuclq.student.dao.UsersDao;
 import com.phuclq.student.domain.*;
@@ -37,8 +36,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.itextpdf.styledxmlparser.css.CommonCssConstants.ACTIVE;
 
 @Service
 @RequiredArgsConstructor
@@ -367,15 +364,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserInfoDTO> getUserInfos() {
+    public List<UserInfoDTO2> getUserInfos() {
         List<UserInfoResult> userInfoResults = userRepository.findUserInfoResult();
-        List<UserInfoDTO> userInfoDTOs = new ArrayList<UserInfoDTO>();
+        List<UserInfoDTO2> userInfoDTO2s = new ArrayList<UserInfoDTO2>();
         userInfoResults.forEach(userInfoResult -> {
-            UserInfoDTO userDto = new UserInfoDTO();
+            UserInfoDTO2 userDto = new UserInfoDTO2();
             BeanUtils.copyProperties(userInfoResult, userDto);
-            userInfoDTOs.add(userDto);
+            userInfoDTO2s.add(userDto);
         });
-        return userInfoDTOs;
+        return userInfoDTO2s;
     }
 
     @Override

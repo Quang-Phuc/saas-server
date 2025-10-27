@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Optional;
+
 public interface LicenseHistoryRepository extends JpaRepository<LicenseHistory, Long> {
 
     @Query(
@@ -26,4 +28,6 @@ public interface LicenseHistoryRepository extends JpaRepository<LicenseHistory, 
             nativeQuery = true
     )
     Page<Object[]> searchLicenseHistories(String keyword, Pageable pageable);
+
+    Optional<LicenseHistory> findTopByUserIdOrderByActionDateDesc(Integer userId);
 }

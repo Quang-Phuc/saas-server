@@ -43,7 +43,7 @@ public interface UserService {
 
     UserDTO getUserResultLogin();
 
-    List<UserInfoDTO> getUserInfos();
+    List<UserInfoDTO2> getUserInfos();
 
     List<UserDTO> getUsersByRole(Integer roleId);
 

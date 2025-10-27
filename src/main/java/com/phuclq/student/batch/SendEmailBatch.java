@@ -1,6 +1,6 @@
 package com.phuclq.student.batch;
 
-import com.phuclq.student.dto.UserInfoDTO;
+import com.phuclq.student.dto.UserInfoDTO2;
 import com.phuclq.student.service.EmailSenderService;
 import com.phuclq.student.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +20,8 @@ public class SendEmailBatch {
 
     @Scheduled(cron = "0 00 08 * * *", zone = "Asia/Bangkok")
     public void sendMail() {
-        List<UserInfoDTO> userInfoDTOs = userService.getUserInfos();
-        emailSenderService.sendEmailsAuto(userInfoDTOs);
+        List<UserInfoDTO2> userInfoDTO2s = userService.getUserInfos();
+        emailSenderService.sendEmailsAuto(userInfoDTO2s);
     }
 
 }

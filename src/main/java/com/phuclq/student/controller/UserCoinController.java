@@ -4,7 +4,7 @@ import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.User;
 import com.phuclq.student.domain.UserCoin;
 import com.phuclq.student.dto.UserDTO;
-import com.phuclq.student.dto.UserInfoDTO;
+import com.phuclq.student.dto.UserInfoDTO2;
 import com.phuclq.student.dto.UserPaymentInfor;
 import com.phuclq.student.service.EmailSenderService;
 import com.phuclq.student.service.OtpService;
@@ -67,10 +67,10 @@ public class UserCoinController {
 
     @Scheduled(cron = "0 15 17 * * *", zone = "Asia/Bangkok")
     public void sendMail() {
-        List<UserInfoDTO> userInfoDTOs = new ArrayList<UserInfoDTO>();
-        userInfoDTOs.add(new UserInfoDTO("huong", "23/12/1993", "huongit1223@gmail.com"));
-        userInfoDTOs.add(new UserInfoDTO("ha", "23/12/1993", "mupmipmup93@gmail.com"));
-        boolean result = emailSenderService.sendEmailsAuto(userInfoDTOs);
+        List<UserInfoDTO2> userInfoDTO2s = new ArrayList<UserInfoDTO2>();
+        userInfoDTO2s.add(new UserInfoDTO2("huong", "23/12/1993", "huongit1223@gmail.com"));
+        userInfoDTO2s.add(new UserInfoDTO2("ha", "23/12/1993", "mupmipmup93@gmail.com"));
+        boolean result = emailSenderService.sendEmailsAuto(userInfoDTO2s);
         System.out.println(result);
     }
 

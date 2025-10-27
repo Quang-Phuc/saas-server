@@ -1,8 +1,7 @@
 package com.phuclq.student.service;
 
-import com.phuclq.student.dto.SendMailDto;
 import com.phuclq.student.dto.UserDTO;
-import com.phuclq.student.dto.UserInfoDTO;
+import com.phuclq.student.dto.UserInfoDTO2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +66,7 @@ public class EmailSenderService {
         return mailMessage;
     }
 
-    public SimpleMailMessage configEmail(UserInfoDTO user) {
+    public SimpleMailMessage configEmail(UserInfoDTO2 user) {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(user.getEmail());
         mailMessage.setSubject(TITLE);
@@ -76,17 +75,17 @@ public class EmailSenderService {
         return mailMessage;
     }
 
-    public List<SimpleMailMessage> getMails(List<UserInfoDTO> userInfoDTOs) {
+    public List<SimpleMailMessage> getMails(List<UserInfoDTO2> userInfoDTO2s) {
         List<SimpleMailMessage> simpleMailMessages = new ArrayList<SimpleMailMessage>();
-        userInfoDTOs.forEach(user -> {
+        userInfoDTO2s.forEach(user -> {
             simpleMailMessages.add(configEmail(user));
         });
         return simpleMailMessages;
     }
 
-    public boolean sendEmailsAuto(List<UserInfoDTO> userInfoDTOs) {
+    public boolean sendEmailsAuto(List<UserInfoDTO2> userInfoDTO2s) {
         try {
-            List<SimpleMailMessage> simpleMailMessages = getMails(userInfoDTOs);
+            List<SimpleMailMessage> simpleMailMessages = getMails(userInfoDTO2s);
             simpleMailMessages.forEach(mail -> {
                 sendEmail(mail);
             });
