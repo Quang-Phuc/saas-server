@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -66,5 +67,33 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<UserInfoResult> findTop10OrderByIdDesc(@Param("type") String type);
 
     User findTopByOrderByIdDesc();
+
+    @Query(
+            value = "SELECT u.id AS user_id, " +
+                    "u.full_name AS full_name, " +
+                    "u.phone AS phone, " +
+                    "u.email AS email, " +
+                    "u.role_id AS role_id, " +
+                    "s.id AS store_id, " +
+                    "s.name AS store_name, " +
+                    "s.address AS store_address, " +
+                    "u.created_date AS created_date " +
+                    "FROM user u " +
+                    "LEFT JOIN users_stores us ON us.user_id = u.id " +
+                    "LEFT JOIN store s ON s.id = us.store_id " +
+                    "WHERE (:keyword IS NULL OR LOWER(u.full_name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                    "AND (:storeId IS NULL OR s.id = :storeId)",
+            countQuery = "SELECT COUNT(*) " +
+                    "FROM user u " +
+                    "LEFT JOIN users_stores us ON us.user_id = u.id " +
+                    "LEFT JOIN store s ON s.id = us.store_id " +
+                    "WHERE (:keyword IS NULL OR LOWER(u.full_name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                    "AND (:storeId IS NULL OR s.id = :storeId)",
+            nativeQuery = true
+    )
+    Page<Map<String, Object>> searchUsersWithStore(@Param("keyword") String keyword,
+                                                   @Param("storeId") Long storeId,
+                                                   Pageable pageable);
+
 
 }

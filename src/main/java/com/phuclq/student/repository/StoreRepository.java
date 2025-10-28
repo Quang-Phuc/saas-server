@@ -20,6 +20,7 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
             value = "SELECT s.id AS store_id, " +
                     "s.name AS store_name, " +
                     "s.address AS store_address, " +
+                    "s.note AS note, " +
                     "u.id AS user_id, " +
                     "u.full_name AS user_full_name, " +
                     "u.phone AS user_phone, " +
@@ -42,5 +43,14 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     Page<Map<String, Object>> searchStoresWithUser(@Param("keyword") String keyword,
                                                    @Param("userId") Integer userId,
                                                    Pageable pageable);
+
+    @Query(
+            value = "SELECT DISTINCT s.id, s.name, s.address " +
+                    "FROM store s " +
+                    "JOIN users_stores us ON us.store_id = s.id " +
+                    "WHERE (:userId IS NULL OR us.user_id = :userId)",
+            nativeQuery = true
+    )
+    List<Map<String, Object>> findStoresByUserId(@Param("userId") Integer userId);
 
 }

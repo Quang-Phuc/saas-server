@@ -53,4 +53,7 @@ public interface UserService {
 
     public JwtResponse login(JwtRequest authenticationRequest) throws Exception;
 
+    Page<UserWithStoreDTO> getAll(String keyword, Long storeId, Pageable pageable);
+
+
 }

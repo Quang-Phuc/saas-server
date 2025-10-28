@@ -10,6 +10,7 @@ import com.phuclq.student.service.UserService;
 import com.phuclq.student.utils.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpHeaders;
@@ -106,6 +107,16 @@ public class UserController {
 
         User user = userService.save(accountDTO);
         return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(user.getUserName()).getResponse();
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long storeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(userService.getAll(keyword, storeId, PageRequest.of(page, size))).getResponse();
     }
 
 }

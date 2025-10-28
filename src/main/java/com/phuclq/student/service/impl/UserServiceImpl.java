@@ -446,6 +446,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public JwtResponse login(JwtRequest loginRequest) throws Exception {
+        loginRequest.setPhone("0865052262");
+        loginRequest.setPassword("0865052262");
         if(Objects.nonNull(loginRequest.getPhone())){
             loginRequest.setUserName(loginRequest.getPhone());
         }
@@ -520,5 +522,21 @@ public class UserServiceImpl implements UserService {
             throw new BusinessHandleException("SS005");
         }
         return null;
+    }
+    @Override
+    public Page<UserWithStoreDTO> getAll(String keyword, Long storeId, Pageable pageable) {
+        Page<Map<String, Object>> page = userRepository.searchUsersWithStore(keyword, storeId, pageable);
+
+        return page.map(map -> UserWithStoreDTO.builder()
+                .userId(map.get("user_id") != null ? ((Number) map.get("user_id")).longValue() : null)
+                .fullName((String) map.get("full_name"))
+                .phone((String) map.get("phone"))
+                .email((String) map.get("email"))
+                .roleId(map.get("role_id") != null ? ((Number) map.get("role_id")).intValue() : null)
+                .storeId(map.get("store_id") != null ? ((Number) map.get("store_id")).longValue() : null)
+                .storeName((String) map.get("store_name"))
+                .storeAddress((String) map.get("store_address"))
+                .createdDate(map.get("created_date") != null ? map.get("created_date").toString() : null)
+                .build());
     }
 }

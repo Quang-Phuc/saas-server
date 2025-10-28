@@ -19,4 +19,8 @@ public class Store extends Auditable<String> {
     @Column
     private String address;
 
+    @Column
+    private String note;
+
+
 }
