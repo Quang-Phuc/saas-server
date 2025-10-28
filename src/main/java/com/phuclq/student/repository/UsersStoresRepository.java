@@ -1,13 +1,13 @@
 package com.phuclq.student.repository;
 
 import com.phuclq.student.domain.Store;
-import io.swagger.models.auth.In;
+import com.phuclq.student.domain.UsersStores;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface StoreRepository extends JpaRepository<Store, Long> {
-    List<Store> findAllByIdIn(List<Long> ids);
+public interface UsersStoresRepository extends JpaRepository<UsersStores, Long> {
+    List<UsersStores> findAllByUserId(Integer userId);
 }

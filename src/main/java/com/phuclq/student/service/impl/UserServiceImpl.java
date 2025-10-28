@@ -46,6 +46,7 @@ public class UserServiceImpl implements UserService {
     private final StoreRepository storeRepository;
     private final LicensePackageRepository licensePackageRepository;
     private final UserLicenseRepository userLicenseRepository;
+    private final UsersStoresRepository usersStoresRepository;
     @Autowired
     UsersDao usersDao;
     @Autowired
@@ -97,11 +98,15 @@ public class UserServiceImpl implements UserService {
         owner.setFullName(request.getStoreName());
         owner.setPhone(request.getPhone());
         owner.setPassword(hashedPassword);
-        owner.setStoreId(savedStore.getId());
         owner.setIsDeleted(false);
         owner.setIsEnable(false);
         owner.setRoleId(RoleConstant.OWNER); // 1 = Chủ tiệm
-        userRepository.save(owner);
+        User user = userRepository.save(owner);
+
+        UsersStores usersStores = new UsersStores();
+        usersStores.setStoreId(savedStore.getId());
+        usersStores.setUserId(user.getId());
+        usersStoresRepository.save(usersStores);
 
         // 6️⃣ Cấp License mặc định (Trial 30 ngày)
         LocalDate start = LocalDate.now();
@@ -335,20 +340,19 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDTO getUserResultLogin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserResult userResult = null;
+        com.phuclq.student.domain.User userResult = null;
         if (!(authentication instanceof AnonymousAuthenticationToken)) {
             String email = authentication.getName();
-            userResult = userRepository.findUserResultByEmail(email, FileType.USER_AVATAR.getName());
+            userResult = userRepository.findByUserNameIgnoreCaseAndIsDeletedFalse(email).orElseThrow(() -> new BusinessHandleException("SS007"));
 
         }
         UserDTO user = new UserDTO();
         if (Objects.nonNull(userResult)) {
             user.setId(userResult.getId());
-            user.setUserName(userResult.getUser_name());
+            user.setUserName(userResult.getUserName());
             user.setEmail(userResult.getEmail());
             user.setPhone(userResult.getPhone());
-            user.setRoleId(userResult.getRole_id());
-            user.setTotalCoin(userResult.getTotal_coin());
+            user.setRoleId(userResult.getRoleId());
             user.setBirthDay(userResult.getBirthDay());
             user.setFullName(userResult.getFullName());
             user.setGender(userResult.getGender());
@@ -356,7 +360,6 @@ public class UserServiceImpl implements UserService {
             user.setIndustryId(userResult.getIndustryId());
             user.setAddress(userResult.getAddress());
             user.setFullName(userResult.getFullName());
-            user.setImage(userResult.getImage());
             user.setRole(authentication.getAuthorities());
             user.setReferralCode(userResult.getReferralCode());
         }
@@ -487,23 +490,9 @@ public class UserServiceImpl implements UserService {
 
         } else {
             // ✅ Các vai trò khác → check license cửa hàng
-            Store store = storeRepository.findById(user.getStoreId()).orElseThrow(() -> new BusinessHandleException("SS002"));
-
-            List<UserLicense> licenses = userLicenseRepository.findByUserIdAndStatusOrderByIdDesc(store.getId(),"ACTIVE");
-            if (Objects.isNull(licenses)) {
-                throw new BusinessHandleException("SS003");
-            }
-            UserLicense license = licenses.get(0);
-
-            boolean isExpired = license.isExpired();
-
-            if (isExpired) {
-
-                if (user.getRoleId() == RoleConstant.OWNER) {
-                    throw new BusinessHandleException("SS004");
-                } else if (user.getRoleId() == RoleConstant.STAFF) {
-                    throw new BusinessHandleException("SS005");
-                }
+            List<UsersStores> allByUserId = usersStoresRepository.findAllByUserId(user.getId());
+            if(Objects.isNull(allByUserId)){
+                throw new BusinessHandleException("SS002");
             }
             loginRes = new JwtResponse(
                     jwt,

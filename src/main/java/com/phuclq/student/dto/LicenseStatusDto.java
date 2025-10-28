@@ -1,5 +1,6 @@
 package com.phuclq.student.dto; // Adjust package name as needed
 
+import com.phuclq.student.domain.Store;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate; // Use LocalDate for dates
@@ -12,7 +13,7 @@ public class LicenseStatusDto {
     private LocalDate expiryDate; // Use LocalDate or String as needed
     private Integer currentStoreCount;
     private Integer currentUserCount;
-    private List<StoreInfoDto> stores;
+    private List<Store> stores;
     private List<UserInfoDto> users;
 
     // Constructor for VALID status
@@ -22,7 +23,7 @@ public class LicenseStatusDto {
     }
 
     // Constructor for EXPIRED status
-    public LicenseStatusDto(String status, Integer currentStoreCount, Integer currentUserCount, List<StoreInfoDto> stores, List<UserInfoDto> users) {
+    public LicenseStatusDto(String status, Integer currentStoreCount, Integer currentUserCount, List<Store> stores, List<UserInfoDto> users) {
         this.status = status;
         this.currentStoreCount = currentStoreCount;
         this.currentUserCount = currentUserCount;

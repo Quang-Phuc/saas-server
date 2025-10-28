@@ -36,6 +36,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByPhone(String phone);
 
+    List<User> findAllByIdInAndRoleId(List<Integer> ids , Integer role);
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     User findUserByEmailIgnoreCaseAndIsDeletedFalseAndUserFaceIdIsNull(String email);
 

@@ -9,6 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserInfoDto {
     private Integer id;
-    private String name; // Using fullName from User entity
-    private Long storeId; // Include storeId if needed for selection dialog
+    private String userName; // Using fullName from User entity
 }
