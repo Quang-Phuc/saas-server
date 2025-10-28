@@ -95,11 +95,12 @@ public class UserServiceImpl implements UserService {
 
         // 5️⃣ Tạo chủ tiệm (User)
         User owner = new User();
-        owner.setFullName(request.getStoreName());
+        owner.setFullName(request.getPhone());
         owner.setPhone(request.getPhone());
         owner.setPassword(hashedPassword);
         owner.setIsDeleted(false);
         owner.setIsEnable(false);
+        owner.setUserName(request.getPhone());
         owner.setRoleId(RoleConstant.OWNER); // 1 = Chủ tiệm
         User user = userRepository.save(owner);
 

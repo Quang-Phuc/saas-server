@@ -35,6 +35,9 @@ public class LicenseServiceImpl implements LicenseService {
     @Override
     public LicenseStatusDto checkLicense() {
         // ✅ Lấy thông tin user đăng nhập
+        if(1 ==1 ){
+           throw  new BusinessHandleException("SS004");
+        }
         UserDTO userResultLogin = userService.getUserResultLogin();
         Integer userId = userResultLogin.getId();
 

@@ -14,6 +14,8 @@ import javax.persistence.EntityNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.phuclq.student.types.LicenseHistoryStatus.PENDING_RENEWAL;
+
 @Service
 @RequiredArgsConstructor
 public class LicenseHistoryServiceImpl implements LicenseHistoryService {
@@ -25,18 +27,20 @@ public class LicenseHistoryServiceImpl implements LicenseHistoryService {
     @Override
     public LicenseHistory create(LicenseHistory licenseHistory) {
         UserDTO userResultLogin = userService.getUserResultLogin();
-        licenseHistory.setUserId(userResultLogin.getId());
-        return licenseHistoryRepository.save(licenseHistory);
+
+        LicenseHistory history = new LicenseHistory();
+        history.setUserId(userResultLogin.getId());
+        history.setLicensePackageId(licenseHistory.getLicensePackageId());
+        history.setStatus(PENDING_RENEWAL.getCode());
+        return licenseHistoryRepository.save(history);
     }
 
     @Override
     public LicenseHistory update(Long id, LicenseHistory licenseHistory) {
         LicenseHistory existing = licenseHistoryRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Không tìm thấy lịch sử license id = " + id));
 
-        existing.setAction(licenseHistory.getAction());
         existing.setActionDate(licenseHistory.getActionDate());
         existing.setNote(licenseHistory.getNote());
-        existing.setUserLicenseId(licenseHistory.getUserLicenseId());
 
         return licenseHistoryRepository.save(existing);
     }
