@@ -1,10 +1,14 @@
 package com.phuclq.student.service.impl;
 
 import com.phuclq.student.domain.LicenseHistory;
+import com.phuclq.student.domain.LicensePackage;
 import com.phuclq.student.dto.UserDTO;
+import com.phuclq.student.exception.BusinessHandleException;
 import com.phuclq.student.repository.LicenseHistoryRepository;
+import com.phuclq.student.repository.LicensePackageRepository;
 import com.phuclq.student.service.LicenseHistoryService;
 import com.phuclq.student.service.UserService;
+import com.phuclq.student.types.LicenseHistoryStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,17 +27,35 @@ public class LicenseHistoryServiceImpl implements LicenseHistoryService {
     private final UserService userService;
 
     private final LicenseHistoryRepository licenseHistoryRepository;
+    private final LicensePackageRepository licensePackageRepository;
+
+
 
     @Override
     public LicenseHistory create(LicenseHistory licenseHistory) {
         UserDTO userResultLogin = userService.getUserResultLogin();
 
+        // 🔹 Lấy thông tin gói license hiện tại
+        LicensePackage licensePackage = licensePackageRepository.findById(licenseHistory.getLicensePackageId())
+                .orElseThrow(() -> new BusinessHandleException("SS009")); // "Không tìm thấy gói license"
+
+        // 🔹 Tạo lịch sử license
         LicenseHistory history = new LicenseHistory();
         history.setUserId(userResultLogin.getId());
-        history.setLicensePackageId(licenseHistory.getLicensePackageId());
-        history.setStatus(PENDING_RENEWAL.getCode());
+        history.setNote(licenseHistory.getNote());
+        history.setStatus(LicenseHistoryStatus.PENDING_RENEWAL.getCode());
+
+        // 🔹 Ghi lại snapshot gói tại thời điểm này
+        history.setLicensePackageId(licensePackage.getId());
+        history.setPackageName(licensePackage.getName());
+        history.setPackagePrice(licensePackage.getPrice());
+        history.setPackageDiscount(licensePackage.getDiscount());
+        history.setPackageDurationDays(licensePackage.getDurationDays());
+
+
         return licenseHistoryRepository.save(history);
     }
+
 
     @Override
     public LicenseHistory update(Long id, LicenseHistory licenseHistory) {
@@ -54,26 +76,17 @@ public class LicenseHistoryServiceImpl implements LicenseHistoryService {
     }
 
     @Override
-    public Page<Map<String, Object>> getAll(String keyword, Pageable pageable) {
-        Page<Object[]> result = licenseHistoryRepository.searchLicenseHistories(keyword, pageable);
+    public Page<LicenseHistory> getAll(String keyword, Pageable pageable) {
+        UserDTO userResultLogin = userService.getUserResultLogin();
+        Integer userId = userResultLogin.getId();
 
-        return result.map(record -> {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("id", record[0]);
-            map.put("userLicenseId", record[1]);
-            map.put("action", record[2]);
-            map.put("actionDate", record[3]);
-            map.put("note", record[4]);
-            map.put("createdBy", record[5]);
-            map.put("createdDate", record[6]);
-            map.put("lastUpdatedBy", record[7]);
-            map.put("lastUpdatedDate", record[8]);
-            map.put("idUrl", record[9]);
-            map.put("packageName", record[10]);
-            map.put("packagePrice", record[11]);
-            map.put("packageCreatedDate", record[12]);
-            return map;
-        });
+        if (keyword == null || keyword.trim().isEmpty()) {
+            // Không có từ khóa → lấy tất cả lịch sử theo userId
+            return licenseHistoryRepository.findByUserId(userId, pageable);
+        }
+
+        // Có từ khóa → tìm theo userId + tên gói
+        return licenseHistoryRepository.findByUserIdAndPackageNameContainingIgnoreCase(userId, keyword.trim(), pageable);
     }
 
     @Override

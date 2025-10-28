@@ -29,5 +29,11 @@ public interface LicenseHistoryRepository extends JpaRepository<LicenseHistory, 
     )
     Page<Object[]> searchLicenseHistories(String keyword, Pageable pageable);
 
+
+
+    Page<LicenseHistory> findByUserId(Integer userId, Pageable pageable);
+
+    Page<LicenseHistory> findByUserIdAndPackageNameContainingIgnoreCase(Integer userId, String packageName, Pageable pageable);
+
     Optional<LicenseHistory> findTopByUserIdOrderByActionDateDesc(Integer userId);
 }

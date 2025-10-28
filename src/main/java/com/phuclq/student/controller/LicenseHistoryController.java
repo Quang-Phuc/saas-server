@@ -1,14 +1,13 @@
 package com.phuclq.student.controller;
 
+import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.LicenseHistory;
 import com.phuclq.student.service.LicenseHistoryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/license-history")
@@ -16,6 +15,7 @@ import java.util.Map;
 public class LicenseHistoryController {
 
     private final LicenseHistoryService licenseHistoryService;
+    private final RestEntityResponse restEntityRes;
 
     @PostMapping
     public LicenseHistory create(@RequestBody LicenseHistory licenseHistory) {
@@ -32,14 +32,10 @@ public class LicenseHistoryController {
         licenseHistoryService.delete(id);
     }
 
+
     @GetMapping
-    public Page<Map<String, Object>> getAll(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size);
-        return licenseHistoryService.getAll(keyword, pageable);
+    public ResponseEntity<?> getAll(@RequestParam(required = false) String keyword, Pageable pageable) {
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(licenseHistoryService.getAll(keyword, pageable)).getResponse();
     }
 
     @GetMapping("/{id}")

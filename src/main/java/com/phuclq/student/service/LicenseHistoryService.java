@@ -9,6 +9,6 @@ public interface LicenseHistoryService {
     LicenseHistory create(LicenseHistory licenseHistory);
     LicenseHistory update(Long id, LicenseHistory licenseHistory);
     void delete(Long id);
-    Page<Map<String, Object>> getAll(String keyword, Pageable pageable);
+    Page<LicenseHistory> getAll(String keyword, Pageable pageable);
     LicenseHistory getById(Long id);
 }

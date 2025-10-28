@@ -28,4 +28,18 @@ public class LicenseHistory extends Auditable<String> {
 
     @Column(name = "status", nullable = false)
     private Integer status;
+
+    @Column(name = "package_name")
+    private String packageName;
+
+    @Column(name = "package_price")
+    private Double packagePrice;
+
+    @Column(name = "package_discount")
+    private Double packageDiscount;
+
+    @Column(name = "package_duration_days")
+    private Integer packageDurationDays;
+
+
 }
