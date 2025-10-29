@@ -1,7 +1,9 @@
 package com.phuclq.student.service;
 
 import com.phuclq.student.domain.File;
+import com.phuclq.student.domain.LicenseHistory;
 import com.phuclq.student.domain.User;
+import com.phuclq.student.domain.UsersStores;
 import com.phuclq.student.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

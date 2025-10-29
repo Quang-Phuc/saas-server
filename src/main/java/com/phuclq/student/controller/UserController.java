@@ -2,11 +2,15 @@ package com.phuclq.student.controller;
 
 import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.File;
+import com.phuclq.student.domain.LicenseHistory;
 import com.phuclq.student.domain.User;
+import com.phuclq.student.domain.UsersStores;
 import com.phuclq.student.dto.*;
+import com.phuclq.student.repository.UsersStoresRepository;
 import com.phuclq.student.service.AttachmentService;
 import com.phuclq.student.service.ConfirmationTokenService;
 import com.phuclq.student.service.UserService;
+import com.phuclq.student.service.UsersStoresService;
 import com.phuclq.student.utils.PaginationUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -33,6 +37,9 @@ public class UserController {
     private UserService userService;
     @Autowired
     private ConfirmationTokenService confirmationTokenService;
+    @Autowired
+    private UsersStoresService usersStoresService;
+
 
 
     @SuppressWarnings("rawtypes")
@@ -117,6 +124,11 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size) {
 
         return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(userService.getAll(keyword, storeId, PageRequest.of(page, size))).getResponse();
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody UsersStores usersStores) {
+        return restEntityRes.setHttpStatus(HttpStatus.CREATED).setDataResponse(usersStoresService.update(id, usersStores)).getResponse();
     }
 
 }

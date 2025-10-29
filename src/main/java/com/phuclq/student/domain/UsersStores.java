@@ -18,4 +18,7 @@ public class UsersStores extends Auditable<String> {
     @Column
     private Long storeId;
 
+    @Transient // ✅ Trường này sẽ không được lưu vào database
+    private String type;
+
 }
