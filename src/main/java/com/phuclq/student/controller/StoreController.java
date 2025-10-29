@@ -53,9 +53,9 @@ public class StoreController {
     }
 
     @GetMapping("/dropdown")
-    public List<StoreDropdownDTO> getStoresDropdown(
+    public ResponseEntity<?>  getStoresDropdown(
             @RequestParam(required = false) Integer userId) {
-        return storeService.getStoresDropdown(userId);
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(storeService.getStoresDropdown(userId)).getResponse();
     }
 
 
