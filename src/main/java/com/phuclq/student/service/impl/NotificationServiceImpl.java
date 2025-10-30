@@ -6,7 +6,6 @@ import com.phuclq.student.exception.BusinessException;
 import com.phuclq.student.exception.BusinessHandleException;
 import com.phuclq.student.exception.ExceptionUtils;
 import com.phuclq.student.repository.NotificationRepository;
-import com.phuclq.student.repository.UserHistoryCoinRepository;
 import com.phuclq.student.service.NotificationService;
 import com.phuclq.student.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +22,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
     NotificationRepository paymentRequestRepository;
-    @Autowired
-    UserHistoryCoinRepository userHistoryCoinRepository;
     @Autowired
     private UserService userService;
 

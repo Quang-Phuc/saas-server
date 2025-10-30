@@ -2,11 +2,9 @@ package com.phuclq.student.service.impl;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.phuclq.student.domain.UserHistoryCoin;
 import com.phuclq.student.dto.baokim.*;
 import com.phuclq.student.exception.BusinessAssert;
 import com.phuclq.student.exception.BusinessException;
-import com.phuclq.student.repository.UserHistoryCoinRepository;
 import com.phuclq.student.service.JwtEncryptSubService;
 import com.phuclq.student.service.RequestHistorySubService;
 import com.phuclq.student.types.RequestType;
@@ -34,8 +32,6 @@ import java.util.concurrent.TimeUnit;
 public class OrderPaymentSubServiceImpl implements InitializingBean {
 
 
-    @Autowired
-    UserHistoryCoinRepository userHistoryCoinRepository;
     @Autowired
     private BaoKimProperties baoKimProperties;
     @Autowired
@@ -186,46 +182,5 @@ public class OrderPaymentSubServiceImpl implements InitializingBean {
         log.info("success baokim");
     }
 
-    public void sendOrderDetail(PaymentSuccessDto dto) {
-        log.info("success baokim");
-        UserHistoryCoin save = new UserHistoryCoin();
-        int statusCode = 0;
-        UserHistoryCoin userHistoryCoin = userHistoryCoinRepository.findAllByMrcOrderIdAndTxnIdIsNull(
-                dto.getMrcOrderId());
-        if (Objects.isNull(userHistoryCoin)) {
-            return;
-        }
 
-        try {
-
-            userHistoryCoin.setStatus(StatusType.DONE.getName());
-            userHistoryCoin.setTxnId(dto.getTxn_id());
-            userHistoryCoin.setChecksum(dto.getTxn_id());
-            save = userHistoryCoinRepository.save(userHistoryCoin);
-            statusCode = 200;
-        } catch (Exception e) {
-            if (e instanceof HttpClientErrorException) {
-
-                HttpClientErrorException clientError = (HttpClientErrorException) e;
-                if (clientError.getRawStatusCode() == 400) {
-                    throw new BusinessException("");
-                }
-            }
-            statusCode = 400;
-            throw new RuntimeException("Error call api get detail order payment", e);
-        } finally {
-            try {
-                requestHistorySubService.saveLog(
-                        baoKimProperties.getApiDomain() + baoKimProperties.getCallBackDetailUrl(),
-                        StringUtils.convertObjectToJson(dto),
-                        StringUtils.convertObjectToJson(save),
-                        statusCode,
-                        RequestType.BAOKIM_ORDER_SUCCESS,
-                        System.currentTimeMillis(),
-                        userHistoryCoin.getUserId());
-            } catch (Exception ex) {
-                log.error("Error convert object to json get detail order payment", ex);
-            }
-        }
-    }
 }

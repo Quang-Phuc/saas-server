@@ -66,8 +66,6 @@ public class FileServiceImpl implements FileService {
     @Autowired
     RateRepository rateRepository;
     @Autowired
-    UserHistoryCoinRepository userHistoryCoinRepository;
-    @Autowired
     private FileRepository fileRepository;
     @Autowired
     private UserService userService;
@@ -476,30 +474,22 @@ public class FileServiceImpl implements FileService {
     }
 
     private void historyCoin(Integer userId, Double coin, Double totalCoin) {
-        UserHistoryCoin historyCoinDownload = new UserHistoryCoin(userId, coin, HistoryCoinType.DOWNLOAD_FILE_ADMIN.getCode(), HistoryCoinType.DOWNLOAD_FILE_ADMIN.getName(), userId, HistoryCoinType.DOWNLOAD_FILE_ADMIN.getType(), totalCoin);
-        userHistoryCoinRepository.save(historyCoinDownload);
+
 
     }
 
     private void historyCoinUpload(Integer userId, Double coin, Double totalCoin) {
-        UserHistoryCoin historyCoinDownload = new UserHistoryCoin(userId, coin, HistoryCoinType.FILE_UPLOADED.getCode(), HistoryCoinType.FILE_UPLOADED.getName(), userId, HistoryCoinType.FILE_UPLOADED.getType(), totalCoin);
-        userHistoryCoinRepository.save(historyCoinDownload);
+
 
     }
 
     private void historyCoinVip(Integer userId, Double coin, Double totalCoin) {
-        UserHistoryCoin historyCoinDownload = new UserHistoryCoin(userId, coin, HistoryCoinType.REGISTER_VIP.getCode(), HistoryCoinType.REGISTER_VIP.getName(), userId, HistoryCoinType.REGISTER_VIP.getType(), totalCoin);
-        userHistoryCoinRepository.save(historyCoinDownload);
+
 
     }
 
     private void historyCoin(User user, File file, Double fileCost, Double costMoney, Double totalCoinDownload, Double totalCoinUpload) {
-        // history coin
-        UserHistoryCoin historyCoinDownload = new UserHistoryCoin(user.getId(), fileCost, HistoryCoinType.DOWNLOAD_FILE.getCode(), HistoryCoinType.DOWNLOAD_FILE.getName(), user.getId(), HistoryCoinType.DOWNLOAD_FILE.getType(), totalCoinDownload);
-        userHistoryCoinRepository.save(historyCoinDownload);
 
-        UserHistoryCoin historyCoinUpload = new UserHistoryCoin(file.getAuthorId(), costMoney, HistoryCoinType.DOWNLOADED_FILE.getCode(), HistoryCoinType.DOWNLOADED_FILE.getName(), user.getId(), HistoryCoinType.DOWNLOADED_FILE.getType(), totalCoinUpload);
-        userHistoryCoinRepository.save(historyCoinUpload);
     }
 
     void sendMailDownload(SendMailDto sendMailDto) {

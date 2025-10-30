@@ -5,7 +5,6 @@ package com.phuclq.student.service.impl;
 import com.phuclq.student.domain.Attachment;
 import com.phuclq.student.domain.Blog;
 import com.phuclq.student.domain.File;
-import com.phuclq.student.domain.Home;
 import com.phuclq.student.dto.RequestFileDTO;
 import com.phuclq.student.repository.*;
 import org.slf4j.Logger;
@@ -33,8 +32,6 @@ public class ScheduledService {
     @Autowired
     RateRepository rateRepository;
     @Autowired
-    UserHistoryCoinRepository userHistoryCoinRepository;
-    @Autowired
     UserCoinBackupRepository userCoinBackupRepository;
     @Autowired
     UserCoinRepository userCoinRepository;
@@ -44,8 +41,6 @@ public class ScheduledService {
     private FileRepository fileRepository;
     @Autowired
     private BlogRepository blogRepository;
-    @Autowired
-    private HomeRepository homeRepository;
     @Autowired
     private AttachmentRepository attachmentRepository;
     @Value("${spring.datasource.username}")
@@ -147,12 +142,7 @@ public class ScheduledService {
             blogRepository.saveAndFlush(byId);
         });
 
-        List<Home> allByIdUrlIsNullOrIdUrl = homeRepository.findAllByIdUrlIsNullOrIdUrl("");
-        allByIdUrlIsNullOrIdUrl.stream().limit(100).forEach(x -> {
-            log.info("JOB HOME {}",x.getId());
-            x.setIdUrl(getSearchableStringUrl(x.getName(), homeRepository.findByIdUrlStartingWith(getSearchableStringUrlExit(x.getName())).size()));
-            homeRepository.saveAndFlush(x);
-        });
+
     }
 
     @Scheduled(cron = "0 0 0 * * ?")

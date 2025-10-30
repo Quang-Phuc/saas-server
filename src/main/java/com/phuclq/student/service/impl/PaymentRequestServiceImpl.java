@@ -37,8 +37,6 @@ public class PaymentRequestServiceImpl implements PaymentRequestService {
     @Autowired
     PaymentRequestRepository paymentRequestRepository;
     @Autowired
-    UserHistoryCoinRepository userHistoryCoinRepository;
-    @Autowired
     private UserService userService;
     @Autowired
     private AttachmentService attachmentService;
@@ -221,11 +219,7 @@ public class PaymentRequestServiceImpl implements PaymentRequestService {
         userCoinBackup.setTotalCoin(totalCoinBackup);
         userCoinBackupRepository.save(userCoinBackup);
 
-        UserHistoryCoin historyCoin = new UserHistoryCoin(byId.getCoin(),
-                HistoryCoinType.PAYMENT_DONE.getCode(), HistoryCoinType.PAYMENT_DONE.getName(), userLogin,
-                HistoryCoinType.PAYMENT_DONE.getType(), totalCoin);
 
-        userHistoryCoinRepository.save(historyCoin);
     }
 
 

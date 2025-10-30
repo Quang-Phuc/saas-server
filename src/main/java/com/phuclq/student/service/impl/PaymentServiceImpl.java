@@ -39,8 +39,6 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     OrderPaymentSubServiceImpl orderPaymentSubService;
     @Autowired
-    UserHistoryCoinRepository userHistoryCoinRepository;
-    @Autowired
     private UserRepository userRepository;
     @Autowired
     private UserCoinRepository userCoinRepository;
@@ -50,8 +48,6 @@ public class PaymentServiceImpl implements PaymentService {
     private UserService userService;
     @Autowired
     private BaoKimProperties baoKimProperties;
-    @Autowired
-    private UserHistoryCoinRepository repository;
     @Autowired
     private UserCoinBackupRepository userCoinBackupRepository;
     @Autowired
@@ -134,23 +130,7 @@ public class PaymentServiceImpl implements PaymentService {
                 log.error("Send unsuccessfully", e);
                 throw new BusinessException("");
             }
-            if (orderSendResponse != null && orderSendResponse.getOrderInfo() != null) {
-                UserCoin userCoin = findByUserId(userLogin.getId());
-                UserHistoryCoin historyCoin = new UserHistoryCoin(Double.valueOf(dto.getTotalAmount()) / moneyConvertCoin,
-                        HistoryCoinType.PAY_COIN.getCode(), HistoryCoinType.PAY_COIN.getName(),
-                        userLogin.getId(), HistoryCoinType.PAY_COIN.getType(), userCoin.getTotalCoin() + Double.valueOf(dto.getTotalAmount()) / moneyConvertCoin);
-                historyCoin.setPaymentOrderId(orderSendResponse.getOrderInfo().getOrderId());
-                historyCoin.setMrcOrderId(orderSendParamDto.getMrcOrderId());
-                userHistoryCoinRepository.save(historyCoin);
-
-                log.info("update order successfully");
-                return new OrderSendDto(orderSendResponse.getOrderInfo());
-
-            } else {
-                log.info("orderSendResponse != null && orderSendResponse.getOrderInfo() != null");
-                return null;
-//				throw new BusinessException("");
-            }
+            return  null;
 
         } catch (Exception e) {
             log.error("error", e);
@@ -179,7 +159,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Object sendOrderDetail(PaymentSuccessDto mrcOrderId) {
-        orderPaymentSubService.sendOrderDetail(mrcOrderId);
         return null;
     }
 
@@ -219,12 +198,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void historyCoin(Integer userId, Double coin, Double totalCoin, String type) {
-        UserHistoryCoin historyCoinDownload = new UserHistoryCoin();
-        if (type.equals(SeoTopType.SEO_TOP_FILE.getName())) {
-            historyCoinDownload = new UserHistoryCoin(userId, coin, HistoryCoinType.SEO_FILE.getCode(), HistoryCoinType.SEO_FILE.getName(), userId, HistoryCoinType.SEO_FILE.getType(), totalCoin);
 
-        }
-        userHistoryCoinRepository.save(historyCoinDownload);
 
     }
 
