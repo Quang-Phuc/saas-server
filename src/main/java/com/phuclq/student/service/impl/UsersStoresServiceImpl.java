@@ -9,9 +9,11 @@ import com.phuclq.student.service.UsersStoresService;
 import com.phuclq.student.types.RoleConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.phuclq.student.dto.UserStoreInfoDTO;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class UsersStoresServiceImpl implements UsersStoresService {
@@ -62,5 +64,12 @@ public class UsersStoresServiceImpl implements UsersStoresService {
     @Override
     public void delete(Long id) {
         repository.deleteById(id);
+    }
+    @Override
+    public List<UserStoreInfoDTO> getUsersByStoreId(Long storeId) {
+        List<User> users = repository.findUsersByStoreId(storeId);
+        return users.stream()
+                .map(u -> new UserStoreInfoDTO(u.getId(), u.getFullName(), u.getPhone()))
+                .collect(Collectors.toList());
     }
 }

@@ -1,8 +1,12 @@
 package com.phuclq.student.controller;
 
+import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.UsersStores;
+import com.phuclq.student.dto.UserStoreInfoDTO;
 import com.phuclq.student.service.UsersStoresService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,6 +17,9 @@ public class UsersStoresController {
 
     @Autowired
     private UsersStoresService service;
+
+    @Autowired
+    private RestEntityResponse restEntityRes;
 
     @GetMapping
     public List<UsersStores> getAll() {
@@ -37,5 +44,9 @@ public class UsersStoresController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+    @GetMapping("/store/{storeId}")
+    public ResponseEntity<?> getUsersByStoreId(@PathVariable Long storeId) {
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(service.getUsersByStoreId(storeId)).getResponse();
     }
 }
