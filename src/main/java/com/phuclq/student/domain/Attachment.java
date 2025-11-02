@@ -78,4 +78,18 @@ public class Attachment extends Auditable<String> {
         this.setIdUrl(StringUtils.getSearchableStringUrl(fileName, size));
     }
 
+    public Attachment(String fileName, String fileType, Integer requestId,
+                       String fileNameS3, String url, String extension, String dataUir, int size) {
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.requestId = requestId;
+
+        this.fileNameS3 = fileNameS3;
+        this.url = url;
+        this.status = AttachmentStatusType.ACTIVE.getName();
+        this.type = extension;
+        this.dataUir = dataUir;
+        this.setIdUrl(StringUtils.getSearchableStringUrl(fileName, size));
+    }
+
 }

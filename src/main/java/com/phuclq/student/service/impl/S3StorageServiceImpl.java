@@ -4,10 +4,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.phuclq.student.common.Constants;
+import com.phuclq.student.domain.Attachment;
 import com.phuclq.student.dto.FileData;
 import com.phuclq.student.exception.BusinessException;
 import com.phuclq.student.exception.ExceptionUtils;
 import com.phuclq.student.service.S3StorageService;
+import com.phuclq.student.utils.Base64ToMultipartFile;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -22,7 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -263,4 +267,34 @@ public class S3StorageServiceImpl implements S3StorageService {
 //        return ((AmazonS3Client) s3Client).getResourceUrl(bucketName, fileName);
         return ((AmazonS3Client) s3Client).getResourceUrl(bucketName, fileName);
     }
+
+    @Override
+    public Attachment uploadFileToS3(MultipartFile file, Long requestId, String fileType) throws IOException {
+        String folder = Constants.listImagePublic.contains(fileType) ? "public/" : "File/";
+        String dateFormat = new SimpleDateFormat("yyyy-MM-ddHHmmss").format(new Date());
+
+        String fileName = com.phuclq.student.utils.StringUtils.getSearchableString(
+                String.format(Constants.STRING_FORMAT_2_VARIABLE_WITH_UNDERLINED, folder, dateFormat, requestId, file.getOriginalFilename())
+        ).replace(" ", "_");
+
+        String url = getUrlFile(fileName);
+        String fileNameS3 = uploadFileToS3(file);
+        String extension = org.apache.commons.io.FilenameUtils.getExtension(file.getOriginalFilename());
+        String dataUir = ""; // tùy logic của bạn, ví dụ Base64 hoặc link gốc
+        int size = (int) file.getSize();
+
+
+        // lưu vào DB nếu cần, ví dụ: attachmentRepository.save(attachment);
+        return new Attachment(
+                fileName,
+                fileType,                          // fileType
+                requestId.intValue(),          // requestId (constructor nhận Integer)
+                fileNameS3,
+                url,
+                extension,
+                dataUir,
+                size
+        );
+    }
+
 }

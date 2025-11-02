@@ -1,15 +1,17 @@
 package com.phuclq.student.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.phuclq.student.domain.*; // (Entities)
-import com.phuclq.student.dto.*; // (DTOs)
+import com.phuclq.student.domain.*;
+import com.phuclq.student.dto.CustomerDto;
+import com.phuclq.student.dto.FeesDto;
+import com.phuclq.student.dto.PledgeContractDto;
 import com.phuclq.student.mapper.PledgeContractMapper;
-import com.phuclq.student.repository.*; // (Repositories)
+import com.phuclq.student.repository.*;
 import com.phuclq.student.service.FileStorageService;
 import com.phuclq.student.service.FileUploadResult;
 import com.phuclq.student.service.PledgeContractService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.phuclq.student.service.S3StorageService;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,7 +19,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Optional;
 
+import static com.phuclq.student.types.FileType.FILE_AVATAR;
+import static com.phuclq.student.types.FileType.PLEDGE_CONTRACT_FILE;
+
 @Service
+@AllArgsConstructor
 public class PledgeContractServiceImpl implements PledgeContractService {
 
     // (Inject tất cả các Repository cần thiết)
@@ -31,42 +37,18 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     private final FileStorageService fileStorageService;
     private final PledgeContractMapper mapper;
     private final ObjectMapper objectMapper;
+    private final S3StorageService s3StorageService;
 
-    @Autowired
-    public PledgeContractServiceImpl(
-            PledgeContractRepository contractRepository,
-            CustomerRepository customerRepository,
-            LoanRepository loanRepository,
-            CollateralAssetRepository collateralRepository,
-            FeeDetailRepository feeDetailRepository,
-            AttachmentRepository attachmentRepository,
-            FileStorageService fileStorageService,
-            PledgeContractMapper mapper)
-    {
-        this.contractRepository = contractRepository;
-        this.customerRepository = customerRepository;
-        this.loanRepository = loanRepository;
-        this.collateralRepository = collateralRepository;
-        this.feeDetailRepository = feeDetailRepository;
-        this.attachmentRepository = attachmentRepository;
-        this.fileStorageService = fileStorageService;
-        this.mapper = mapper;
-
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule()); // Hỗ trợ Java 8 Date/Time
-    }
 
     @Override
     @Transactional // (Rất quan trọng! Nếu lỗi thì rollback tất cả)
-    public PledgeContract createPledge(String payloadJson,
-                                       MultipartFile portraitFile,
-                                       List<MultipartFile> attachmentFiles) {
+    public PledgeContract createPledge(String payloadJson, MultipartFile portraitFile, List<MultipartFile> attachmentFiles) {
         try {
             // 1. Chuyển đổi JSON -> DTO
             PledgeContractDto dto = objectMapper.readValue(payloadJson, PledgeContractDto.class);
-
+//            2. Thông tin cho vay loan
             // 2. Upload ảnh chân dung (nếu có)
-            FileUploadResult portraitUpload = fileStorageService.saveFile(portraitFile);
+            Attachment portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
             String portraitUrl = (portraitUpload != null) ? portraitUpload.getUrl() : null;
 
             // 3. Lưu Customer
@@ -82,12 +64,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             CollateralAsset savedCollateral = collateralRepository.save(collateralEntity);
 
             // 6. Tạo và Lưu Hợp đồng (PledgeContract)
-            PledgeContract contractEntity = PledgeContract.builder()
-                    .storeId(dto.getStoreId())
-                    .customerId(savedCustomer.getId())
-                    .loanId(savedLoan.getId())
-                    .collateralId(savedCollateral.getId())
-                    .build();
+            PledgeContract contractEntity = PledgeContract.builder().storeId(dto.getStoreId()).customerId(savedCustomer.getId()).loanId(savedLoan.getId()).collateralId(savedCollateral.getId()).build();
             PledgeContract savedContract = contractRepository.save(contractEntity);
 
             // 7. Cập nhật contractId cho CollateralAsset (Hoàn tất liên kết 2 chiều)
@@ -102,32 +79,16 @@ public class PledgeContractServiceImpl implements PledgeContractService {
                 for (MultipartFile file : attachmentFiles) {
                     if (file == null || file.isEmpty()) continue;
 
-                    FileUploadResult fileUpload = fileStorageService.saveFile(file);
-
-                    Attachment attachment = new Attachment();
-                    attachment.setRequestId(savedContract.getId().intValue()); // <-- Sửa kiểu Integer
-                    attachment.setFileName(file.getOriginalFilename());
-                    attachment.setUrl(fileUpload.getUrl());
-                    attachment.setFileType(file.getContentType());
-                    attachment.setFileNameS3(fileUpload.getS3Key());
-                    attachment.setStatus("ACTIVE");
-                    attachment.setType("ATTACHMENT"); // (Phân biệt với 'PORTRAIT')
-
-                    attachmentRepository.save(attachment);
+                    Attachment uploadFileToS3 = s3StorageService.uploadFileToS3(portraitFile, null, PLEDGE_CONTRACT_FILE.getName());
+                    uploadFileToS3.setRequestId(contractEntity.getId().intValue());
+                    attachmentRepository.save(uploadFileToS3);
                 }
             }
 
             // (Nếu ảnh chân dung cũng lưu vào Attachment)
             if (portraitUpload != null) {
-                Attachment portraitAttachment = new Attachment();
-                portraitAttachment.setRequestId(savedContract.getId().intValue());
-                portraitAttachment.setFileName(portraitFile.getOriginalFilename());
-                portraitAttachment.setUrl(portraitUpload.getUrl());
-                portraitAttachment.setFileType(portraitFile.getContentType());
-                portraitAttachment.setFileNameS3(portraitUpload.getS3Key());
-                portraitAttachment.setStatus("ACTIVE");
-                portraitAttachment.setType("PORTRAIT"); // <-- Đánh dấu đây là ảnh chân dung
-                attachmentRepository.save(portraitAttachment);
+                portraitUpload.setRequestId(contractEntity.getId().intValue());
+                attachmentRepository.save(portraitUpload);
             }
 
             // 10. Trả về Hợp đồng chính

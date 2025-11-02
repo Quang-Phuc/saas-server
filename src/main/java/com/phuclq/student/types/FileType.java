@@ -20,7 +20,8 @@ public enum FileType {
     FILE_BLOG(16, "FILE_BLOG"),
     SELL_IMAGE(17, "SELL_IMAGE"),
     BLOG_IMAGE(18, "BLOG_IMAGE"),
-    SALE_IMAGE(19,"SALE_IMAGE" );
+    SALE_IMAGE(19,"SALE_IMAGE" ),
+    PLEDGE_CONTRACT_FILE(20,"PLEDGE_CONTRACT_FILE" );
 
 
     private final Integer code;
