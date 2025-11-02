@@ -11,11 +11,15 @@ import com.phuclq.student.service.FileStorageService;
 import com.phuclq.student.service.FileUploadResult;
 import com.phuclq.student.service.PledgeContractService;
 import com.phuclq.student.service.S3StorageService;
+import com.phuclq.student.types.InterestPaymentType;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,67 +42,129 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     private final PledgeContractMapper mapper;
     private final ObjectMapper objectMapper;
     private final S3StorageService s3StorageService;
+    private final PaymentScheduleRepository paymentScheduleRepository;
 
 
     @Override
-    @Transactional // (Rất quan trọng! Nếu lỗi thì rollback tất cả)
+    @Transactional
     public PledgeContract createPledge(String payloadJson, MultipartFile portraitFile, List<MultipartFile> attachmentFiles) {
         try {
-            // 1. Chuyển đổi JSON -> DTO
+            // 1️⃣ Parse JSON → DTO
             PledgeContractDto dto = objectMapper.readValue(payloadJson, PledgeContractDto.class);
-//            2. Thông tin cho vay loan
-            // 2. Upload ảnh chân dung (nếu có)
-            Attachment portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
-            String portraitUrl = (portraitUpload != null) ? portraitUpload.getUrl() : null;
 
-            // 3. Lưu Customer
+            // 2️⃣ Upload ảnh chân dung (nếu có)
+            Attachment portraitUpload = null;
+            String portraitUrl = null;
+            if (portraitFile != null && !portraitFile.isEmpty()) {
+                portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
+                portraitUrl = portraitUpload.getUrl();
+            }
+
+            // 3️⃣ Lưu Customer (tìm hoặc tạo mới)
             Customer savedCustomer = findOrCreateCustomer(dto.getCustomer(), portraitUrl);
 
-            // 4. Lưu Loan
+            // 4️⃣ Lưu Loan
             Loan loanEntity = mapper.toLoanEntity(dto.getLoan());
+            if (!InterestPaymentType.isValid(loanEntity.getInterestPaymentType())) {
+                throw new IllegalArgumentException("Loại thanh toán lãi không hợp lệ: " + loanEntity.getInterestPaymentType());
+            }
             Loan savedLoan = loanRepository.save(loanEntity);
 
-            // 5. Lưu CollateralAsset (Tài sản thế chấp)
+            // 5️⃣ Lưu CollateralAsset (Tài sản thế chấp)
             CollateralAsset collateralEntity = mapper.toCollateralAssetEntity(dto.getCollateral());
-            // (Lưu ý: contractId sẽ được cập nhật ở bước 7)
             CollateralAsset savedCollateral = collateralRepository.save(collateralEntity);
 
-            // 6. Tạo và Lưu Hợp đồng (PledgeContract)
-            PledgeContract contractEntity = PledgeContract.builder().storeId(dto.getStoreId()).customerId(savedCustomer.getId()).loanId(savedLoan.getId()).collateralId(savedCollateral.getId()).build();
+            // 6️⃣ Tạo và lưu Hợp đồng chính
+            PledgeContract contractEntity = PledgeContract.builder()
+                    .storeId(dto.getStoreId())
+                    .customerId(savedCustomer.getId())
+                    .loanId(savedLoan.getId())
+                    .collateralId(savedCollateral.getId())
+                    .build();
+
             PledgeContract savedContract = contractRepository.save(contractEntity);
 
-            // 7. Cập nhật contractId cho CollateralAsset (Hoàn tất liên kết 2 chiều)
+            // 7️⃣ Cập nhật lại liên kết 2 chiều
             savedCollateral.setContractId(savedContract.getId());
             collateralRepository.save(savedCollateral);
 
-            // 8. Lưu FeeDetail (Lưu các dòng phí)
+            // 8️⃣ Sinh lịch trả lãi (PaymentSchedule)
+            generatePaymentSchedule(savedLoan, savedContract.getId());
+
+            // 9️⃣ Lưu các loại phí
             saveFeeDetails(dto.getFees(), savedContract.getId());
 
-            // 9. Lưu Attachments (File đính kèm)
+            // 🔟 Lưu file đính kèm (nếu có)
             if (attachmentFiles != null && !attachmentFiles.isEmpty()) {
                 for (MultipartFile file : attachmentFiles) {
                     if (file == null || file.isEmpty()) continue;
-
-                    Attachment uploadFileToS3 = s3StorageService.uploadFileToS3(portraitFile, null, PLEDGE_CONTRACT_FILE.getName());
-                    uploadFileToS3.setRequestId(contractEntity.getId().intValue());
-                    attachmentRepository.save(uploadFileToS3);
+                    try {
+                        Attachment uploaded = s3StorageService.uploadFileToS3(file, null, PLEDGE_CONTRACT_FILE.getName());
+                        uploaded.setRequestId(savedContract.getId().intValue());
+                        attachmentRepository.save(uploaded);
+                    } catch (Exception ex) {
+                        // Chỉ log lỗi, không rollback toàn bộ
+                        System.err.println("⚠️ Upload file thất bại: " + file.getOriginalFilename());
+                    }
                 }
             }
 
-            // (Nếu ảnh chân dung cũng lưu vào Attachment)
+            // 11️⃣ Lưu ảnh chân dung (nếu có)
             if (portraitUpload != null) {
-                portraitUpload.setRequestId(contractEntity.getId().intValue());
+                portraitUpload.setRequestId(savedContract.getId().intValue());
                 attachmentRepository.save(portraitUpload);
             }
 
-            // 10. Trả về Hợp đồng chính
             return savedContract;
 
         } catch (Exception e) {
-            // (Ném RuntimeException để @Transactional có thể rollback)
             throw new RuntimeException("Lỗi khi tạo hợp đồng: " + e.getMessage(), e);
         }
     }
+    private void generatePaymentSchedule(Loan loan, Long contractId) {
+        int count = loan.getPaymentCount() != null ? loan.getPaymentCount() : 1;
+        BigDecimal principal = loan.getLoanAmount();
+        LocalDate startDate = loan.getLoanDate();
+        int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 30;
+
+        BigDecimal interestPerPeriod = calculateInterestPerPeriod(loan);
+
+        for (int i = 1; i <= count; i++) {
+            LocalDate dueDate = startDate.plusDays(termValue * i);
+
+            BigDecimal principalAmount = BigDecimal.ZERO;
+            if ("INSTALLMENT".equalsIgnoreCase(loan.getInterestPaymentType())) {
+                principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
+            } else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType()) && i == count) {
+                principalAmount = principal;
+            }
+
+            BigDecimal totalAmount = interestPerPeriod.add(principalAmount);
+
+            PaymentSchedule schedule = PaymentSchedule.builder()
+                    .contractId(contractId)
+                    .periodNumber(i)
+                    .dueDate(dueDate)
+                    .interestAmount(interestPerPeriod)
+                    .principalAmount(principalAmount)
+                    .totalAmount(totalAmount)
+                    .status("PENDING")
+                    .build();
+
+            paymentScheduleRepository.save(schedule);
+        }
+    }
+
+    private BigDecimal calculateInterestPerPeriod(Loan loan) {
+        BigDecimal ratePerMillionPerDay = loan.getInterestRateValue();
+        BigDecimal loanAmount = loan.getLoanAmount();
+        BigDecimal million = BigDecimal.valueOf(1_000_000);
+        BigDecimal principalInMillions = loanAmount.divide(million, RoundingMode.HALF_UP);
+
+        int days = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 30;
+        return ratePerMillionPerDay.multiply(principalInMillions).multiply(BigDecimal.valueOf(days));
+    }
+
 
     /**
      * Hàm helper: Tìm khách hàng bằng SĐT/CCCD, nếu không có thì tạo mới
