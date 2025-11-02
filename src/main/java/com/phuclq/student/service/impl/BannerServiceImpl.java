@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.phuclq.student.types.FileType.FILE_BANNER;
-
 @Service
 public class BannerServiceImpl implements BannerService {
 

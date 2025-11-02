@@ -17,7 +17,7 @@ public class PledgeContract extends Auditable<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id; // <-- ID LÀ INTEGER
+    private Long id; // <-- ID LÀ INTEGER
 
     @Column(nullable = false, name = "store_id")
     private String storeId;

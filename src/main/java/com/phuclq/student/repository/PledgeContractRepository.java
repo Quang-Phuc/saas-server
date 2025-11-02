@@ -1,0 +1,10 @@
+package com.phuclq.student.repository;
+
+// (Đặt trong package ...repository)
+import com.phuclq.student.domain.PledgeContract;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface PledgeContractRepository extends JpaRepository<PledgeContract, Integer> { // <-- ID LÀ INTEGER
+}

@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.sql.Date;
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -13,7 +14,8 @@ public class Customer extends Auditable<String> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Integer id;
+    private Long id;
+
 
     // ===== Thông tin cơ bản =====
     @Column(name = "customer_code")
@@ -26,13 +28,13 @@ public class Customer extends Auditable<String> {
     private String phoneNumber; // Số điện thoại
 
     @Column(name = "date_of_birth")
-    private Date dateOfBirth; // Ngày sinh
+    private LocalDate dateOfBirth; // Ngày sinh
 
     @Column(name = "identity_number")
     private String identityNumber; // Số GTTT (CMND/CCCD/Hộ chiếu)
 
     @Column(name = "issue_date")
-    private Date issueDate; // Ngày cấp
+    private LocalDate issueDate; // Ngày cấp
 
     @Column(name = "issue_place")
     private String issuePlace; // Nơi cấp
@@ -110,6 +112,9 @@ public class Customer extends Auditable<String> {
 
     @Column(name = "customer_source")
     private String customerSource; // Nguồn khách hàng
+
+    @Column(length = 1024, name = "id_url")
+    private String idUrl; // URL ảnh chân dung
 
     @Override
     public String toString() {

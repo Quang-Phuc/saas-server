@@ -29,7 +29,7 @@ public class FeeDetail extends Auditable<String> {
      * Dùng để JOIN qua bảng 'pledge_contracts'.
      */
     @Column(name = "contract_id")
-    private String contractId; // (Kiểu String để khớp với ID (UUID) của PledgeContract)
+    private Long contractId; // (Kiểu String để khớp với ID (UUID) của PledgeContract)
 
     /**
      * Tên/Loại của khoản phí này.

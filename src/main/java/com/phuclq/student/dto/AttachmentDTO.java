@@ -18,6 +18,7 @@ public class AttachmentDTO {
     private String type;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+    private String url;
 
     public AttachmentDTO(Attachment attachment) {
         this.id = attachment.getId();
