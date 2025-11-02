@@ -122,38 +122,59 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         }
     }
     private void generatePaymentSchedule(Loan loan, Long contractId) {
+        // 👉 Số kỳ trả (ví dụ: trả góp 3 kỳ, 6 kỳ...)
         int count = loan.getPaymentCount() != null ? loan.getPaymentCount() : 1;
+
+        // 👉 Số tiền vay gốc
         BigDecimal principal = loan.getLoanAmount();
+
+        // 👉 Ngày bắt đầu tính (ngày giải ngân / ngày vay)
         LocalDate startDate = loan.getLoanDate();
+
+        // 👉 Giá trị 1 kỳ (theo ngày), ví dụ kỳ hạn 30 ngày
         int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 30;
 
+        // 👉 Tiền lãi phải trả cho mỗi kỳ
         BigDecimal interestPerPeriod = calculateInterestPerPeriod(loan);
 
+        // 👉 Vòng lặp tạo từng kỳ trả (1 → count)
         for (int i = 1; i <= count; i++) {
+            // 👉 Ngày đến hạn cho kỳ này = ngày vay + (số ngày kỳ * số kỳ)
             LocalDate dueDate = startDate.plusDays(termValue * i);
 
+            // 👉 Tiền gốc phải trả trong kỳ này
             BigDecimal principalAmount = BigDecimal.ZERO;
+
+            // 👉 Nếu loại trả là "trả góp từng kỳ" (INSTALLMENT)
+            // thì chia đều tiền gốc cho các kỳ
             if ("INSTALLMENT".equalsIgnoreCase(loan.getInterestPaymentType())) {
                 principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
-            } else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType()) && i == count) {
+            }
+            // 👉 Nếu loại trả là "trả gốc cuối kỳ" (LUMP_SUM_END)
+            // thì chỉ kỳ cuối mới trả hết tiền gốc
+            else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType()) && i == count) {
                 principalAmount = principal;
             }
 
+            // 👉 Tổng tiền phải trả kỳ này = gốc + lãi
             BigDecimal totalAmount = interestPerPeriod.add(principalAmount);
 
+            // 👉 Tạo đối tượng PaymentSchedule (1 dòng = 1 kỳ trả)
             PaymentSchedule schedule = PaymentSchedule.builder()
-                    .contractId(contractId)
-                    .periodNumber(i)
-                    .dueDate(dueDate)
-                    .interestAmount(interestPerPeriod)
-                    .principalAmount(principalAmount)
-                    .totalAmount(totalAmount)
-                    .status("PENDING")
+                    .contractId(contractId)       // Hợp đồng nào
+                    .periodNumber(i)              // Kỳ thứ mấy
+                    .dueDate(dueDate)             // Ngày đến hạn
+                    .interestAmount(interestPerPeriod) // Tiền lãi kỳ này
+                    .principalAmount(principalAmount)  // Tiền gốc kỳ này
+                    .totalAmount(totalAmount)          // Tổng tiền phải trả
+                    .status("PENDING")                 // Chưa thanh toán
                     .build();
 
+            // 👉 Lưu vào DB
             paymentScheduleRepository.save(schedule);
         }
     }
+
 
     private BigDecimal calculateInterestPerPeriod(Loan loan) {
         BigDecimal ratePerMillionPerDay = loan.getInterestRateValue();
