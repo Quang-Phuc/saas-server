@@ -126,7 +126,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
 
     @Override
     public PledgeContractDetailResponse getPledgeDetail(Long id) {
-        return pledgeRepository.findDetailById(id);
+        return null;// pledgeRepository.findDetailById(id);
     }
 
     private void generatePaymentSchedule(Loan loan, Long contractId) {
