@@ -28,12 +28,16 @@ public class PledgeContract extends Auditable<String> {
     @Column(name = "id")
     private Long id;
 
+    @Column(nullable = false, name = "contract_code")
+    private String contractCode;
+
+
     /**
      * ID của cửa hàng/chi nhánh tạo ra hợp đồng này.
      * Dùng để phân biệt dữ liệu giữa các cửa hàng.
      */
     @Column(nullable = false, name = "store_id")
-    private String storeId;
+    private Long storeId;
 
     /**
      * Khóa ngoại (Foreign Key) liên kết đến ID của khách hàng.

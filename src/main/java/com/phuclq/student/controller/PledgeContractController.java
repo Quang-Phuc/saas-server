@@ -1,7 +1,7 @@
 package com.phuclq.student.controller; // (Thay đổi package cho đúng)
 
 import com.phuclq.student.domain.PledgeContract;
-import com.phuclq.student.dto.PledgeContractResponse;
+import com.phuclq.student.dto.PledgeContractListResponse;
 import com.phuclq.student.dto.PledgeSearchRequest;
 import com.phuclq.student.repository.PledgeRepository;
 import com.phuclq.student.service.PledgeContractService;
@@ -53,7 +53,7 @@ public class PledgeContractController {
     }
 
     @PostMapping("/search")
-    public Page<PledgeContractResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
+    public Page<PledgeContractListResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
         return pledgeRepository.searchPledges(
                 request.getKeyword(),

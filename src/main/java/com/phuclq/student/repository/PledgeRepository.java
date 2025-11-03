@@ -2,7 +2,7 @@ package com.phuclq.student.repository;
 
 import com.phuclq.student.domain.PledgeContract;
 import com.phuclq.student.dto.PledgeContractDetailResponse;
-import com.phuclq.student.dto.PledgeContractResponse;
+import com.phuclq.student.dto.PledgeContractListResponse;
 import com.phuclq.student.types.LoanStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,13 +17,13 @@ import java.util.Optional;
 @Repository
 public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 
-    @Query("SELECT new com.phuclq.student.dto.PledgeContractResponse(" +
+    @Query("SELECT new com.phuclq.student.dto.PledgeContractListResponse(" +
             "pc.id, " +
+            "pc.contractCode, " +
             "l.loanDate, " +
             "l.dueDate, " +
             "c.fullName, " +
             "c.phoneNumber, " +
-            "ca.assetCode, " +
             "ca.assetCode, " +
             "l.loanAmount, " +
             "CONCAT(l.interestRateValue, ' ', l.interestRateUnit), " +
@@ -45,7 +45,7 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
             "AND (:toDate IS NULL OR l.loanDate <= :toDate) " +
             "ORDER BY l.loanDate DESC"
     )
-    Page<PledgeContractResponse> searchPledges(
+    Page<PledgeContractListResponse> searchPledges(
             @Param("keyword") String keyword,
             @Param("status") LoanStatus status,
             @Param("storeId") String storeId,

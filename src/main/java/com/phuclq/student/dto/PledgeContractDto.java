@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class PledgeContractDto {
-    private String storeId;
+    private Long storeId;
     private CustomerDto customer;
     private LoanDto loan;
     private CollateralDto collateral;
