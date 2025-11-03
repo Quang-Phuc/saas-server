@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.phuclq.student.domain.*;
 import com.phuclq.student.dto.CustomerDto;
 import com.phuclq.student.dto.FeesDto;
+import com.phuclq.student.dto.PledgeContractDetailResponse;
 import com.phuclq.student.dto.PledgeContractDto;
 import com.phuclq.student.mapper.PledgeContractMapper;
 import com.phuclq.student.repository.*;
@@ -43,6 +44,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     private final ObjectMapper objectMapper;
     private final S3StorageService s3StorageService;
     private final PaymentScheduleRepository paymentScheduleRepository;
+    private final PledgeRepository pledgeRepository;
 
 
     @Override
@@ -56,8 +58,8 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             Attachment portraitUpload = null;
             String portraitUrl = null;
             if (portraitFile != null && !portraitFile.isEmpty()) {
-                portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
-                portraitUrl = portraitUpload.getUrl();
+//                portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
+                portraitUrl = "portraitUpload.getUrl()";
             }
 
             // 3️⃣ Lưu Customer (tìm hoặc tạo mới)
@@ -95,25 +97,25 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             saveFeeDetails(dto.getFees(), savedContract.getId());
 
             // 🔟 Lưu file đính kèm (nếu có)
-            if (attachmentFiles != null && !attachmentFiles.isEmpty()) {
-                for (MultipartFile file : attachmentFiles) {
-                    if (file == null || file.isEmpty()) continue;
-                    try {
-                        Attachment uploaded = s3StorageService.uploadFileToS3(file, null, PLEDGE_CONTRACT_FILE.getName());
-                        uploaded.setRequestId(savedContract.getId().intValue());
-                        attachmentRepository.save(uploaded);
-                    } catch (Exception ex) {
-                        // Chỉ log lỗi, không rollback toàn bộ
-                        System.err.println("⚠️ Upload file thất bại: " + file.getOriginalFilename());
-                    }
-                }
-            }
-
-            // 11️⃣ Lưu ảnh chân dung (nếu có)
-            if (portraitUpload != null) {
-                portraitUpload.setRequestId(savedContract.getId().intValue());
-                attachmentRepository.save(portraitUpload);
-            }
+//            if (attachmentFiles != null && !attachmentFiles.isEmpty()) {
+//                for (MultipartFile file : attachmentFiles) {
+//                    if (file == null || file.isEmpty()) continue;
+//                    try {
+//                        Attachment uploaded = s3StorageService.uploadFileToS3(file, null, PLEDGE_CONTRACT_FILE.getName());
+//                        uploaded.setRequestId(savedContract.getId().intValue());
+//                        attachmentRepository.save(uploaded);
+//                    } catch (Exception ex) {
+//                        // Chỉ log lỗi, không rollback toàn bộ
+//                        System.err.println("⚠️ Upload file thất bại: " + file.getOriginalFilename());
+//                    }
+//                }
+//            }
+//
+//            // 11️⃣ Lưu ảnh chân dung (nếu có)
+//            if (portraitUpload != null) {
+//                portraitUpload.setRequestId(savedContract.getId().intValue());
+//                attachmentRepository.save(portraitUpload);
+//            }
 
             return savedContract;
 
@@ -121,6 +123,12 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             throw new RuntimeException("Lỗi khi tạo hợp đồng: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public PledgeContractDetailResponse getPledgeDetail(Long id) {
+        return pledgeRepository.findDetailById(id);
+    }
+
     private void generatePaymentSchedule(Loan loan, Long contractId) {
         // 👉 Số kỳ trả (ví dụ: trả góp 3 kỳ, 6 kỳ...)
         int count = loan.getPaymentCount() != null ? loan.getPaymentCount() : 1;
@@ -131,27 +139,29 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         // 👉 Ngày bắt đầu tính (ngày giải ngân / ngày vay)
         LocalDate startDate = loan.getLoanDate();
 
-        // 👉 Giá trị 1 kỳ (theo ngày), ví dụ kỳ hạn 30 ngày
-        int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 30;
+        // 👉 Giá trị 1 kỳ (ví dụ 1 ngày, 1 tuần, 1 tháng,...)
+        int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 1;
+
+        // 👉 Đơn vị kỳ hạn (Ngày / Tuần / Tháng / Tháng định kỳ)
+        String termUnit = loan.getInterestTermUnit() != null ? loan.getInterestTermUnit().name(): "DAY";
 
         // 👉 Tiền lãi phải trả cho mỗi kỳ
         BigDecimal interestPerPeriod = calculateInterestPerPeriod(loan);
 
         // 👉 Vòng lặp tạo từng kỳ trả (1 → count)
         for (int i = 1; i <= count; i++) {
-            // 👉 Ngày đến hạn cho kỳ này = ngày vay + (số ngày kỳ * số kỳ)
-            LocalDate dueDate = startDate.plusDays(termValue * i);
+
+            // 👉 Xác định ngày đến hạn theo đơn vị kỳ hạn
+            LocalDate dueDate = calculateDueDate(startDate, termValue, termUnit, i);
 
             // 👉 Tiền gốc phải trả trong kỳ này
             BigDecimal principalAmount = BigDecimal.ZERO;
 
-            // 👉 Nếu loại trả là "trả góp từng kỳ" (INSTALLMENT)
-            // thì chia đều tiền gốc cho các kỳ
+            // 👉 Nếu loại trả là "trả góp từng kỳ"
             if ("INSTALLMENT".equalsIgnoreCase(loan.getInterestPaymentType())) {
                 principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
             }
-            // 👉 Nếu loại trả là "trả gốc cuối kỳ" (LUMP_SUM_END)
-            // thì chỉ kỳ cuối mới trả hết tiền gốc
+            // 👉 Nếu loại trả là "trả gốc cuối kỳ"
             else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType()) && i == count) {
                 principalAmount = principal;
             }
@@ -161,30 +171,96 @@ public class PledgeContractServiceImpl implements PledgeContractService {
 
             // 👉 Tạo đối tượng PaymentSchedule (1 dòng = 1 kỳ trả)
             PaymentSchedule schedule = PaymentSchedule.builder()
-                    .contractId(contractId)       // Hợp đồng nào
-                    .periodNumber(i)              // Kỳ thứ mấy
-                    .dueDate(dueDate)             // Ngày đến hạn
-                    .interestAmount(interestPerPeriod) // Tiền lãi kỳ này
-                    .principalAmount(principalAmount)  // Tiền gốc kỳ này
-                    .totalAmount(totalAmount)          // Tổng tiền phải trả
-                    .status("PENDING")                 // Chưa thanh toán
+                    .contractId(contractId)
+                    .periodNumber(i)
+                    .dueDate(dueDate)
+                    .interestAmount(interestPerPeriod)
+                    .principalAmount(principalAmount)
+                    .totalAmount(totalAmount)
+                    .status("PENDING")
                     .build();
 
             // 👉 Lưu vào DB
             paymentScheduleRepository.save(schedule);
         }
     }
+    /**
+     * Tính ngày đến hạn cho từng kỳ, dựa vào đơn vị kỳ hạn.
+     */
+    private LocalDate calculateDueDate(LocalDate startDate, int termValue, String termUnit, int periodIndex) {
+        switch (termUnit.toUpperCase()) {
+            case "DAY":
+                return startDate.plusDays((long) termValue * periodIndex);
+
+            case "WEEK":
+                return startDate.plusWeeks((long) termValue * periodIndex);
+
+            case "MONTH":
+                return startDate.plusMonths((long) termValue * periodIndex);
+
+            case "PERIODIC_MONTH":
+                // "Tháng định kỳ" — giữ nguyên ngày trong tháng, cộng thêm theo kỳ
+                return startDate.plusMonths(periodIndex);
+
+            default:
+                // Mặc định cộng theo ngày nếu đơn vị không xác định
+                return startDate.plusDays((long) termValue * periodIndex);
+        }
+    }
 
 
+
+    /**
+     * Tính số tiền lãi phải trả cho mỗi kỳ.
+     *
+     * Công thức cơ bản:
+     *   Lãi kỳ = (Tiền vay / 1.000.000) * Lãi/triệu/ngày * Số ngày trong kỳ
+     *
+     * Ghi chú:
+     *   - Nếu đơn vị lãi là "Lãi/triệu/ngày" → tính theo ngày.
+     *   - Nếu kỳ hạn là tuần hoặc tháng → quy đổi tương ứng sang số ngày.
+     */
     private BigDecimal calculateInterestPerPeriod(Loan loan) {
+
+        // 👉 Lãi suất (ví dụ: 2 nghĩa là 2.000đ / triệu / ngày)
         BigDecimal ratePerMillionPerDay = loan.getInterestRateValue();
+
+        // 👉 Tổng tiền vay (VD: 10.000.000)
         BigDecimal loanAmount = loan.getLoanAmount();
+
+        // 👉 Quy đổi tiền vay sang triệu đồng
         BigDecimal million = BigDecimal.valueOf(1_000_000);
         BigDecimal principalInMillions = loanAmount.divide(million, RoundingMode.HALF_UP);
 
-        int days = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 30;
-        return ratePerMillionPerDay.multiply(principalInMillions).multiply(BigDecimal.valueOf(days));
+        // 👉 Số ngày trong mỗi kỳ (mặc định 30 ngày nếu null)
+        int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 30;
+        String termUnit = loan.getInterestTermUnit() != null ? loan.getInterestTermUnit().name() : "DAY";
+
+        // 👉 Quy đổi kỳ hạn ra số ngày thực tế để tính lãi
+        int totalDays;
+        switch (termUnit.toUpperCase()) {
+            case "DAY":
+                totalDays = termValue;
+                break;
+            case "WEEK":
+                totalDays = termValue * 7;
+                break;
+            case "MONTH":
+            case "PERIODIC_MONTH":
+                totalDays = termValue * 30; // Quy ước trung bình 30 ngày/tháng
+                break;
+            default:
+                totalDays = termValue;
+        }
+
+        // 👉 Công thức tính lãi cho 1 kỳ
+        BigDecimal interestPerPeriod = ratePerMillionPerDay
+                .multiply(principalInMillions)
+                .multiply(BigDecimal.valueOf(totalDays));
+
+        return interestPerPeriod.setScale(0, RoundingMode.HALF_UP); // Làm tròn đến đồng
     }
+
 
 
     /**

@@ -2,6 +2,7 @@ package com.phuclq.student.mapper;
 
 import com.phuclq.student.domain.*; // (Import các Entity)
 import com.phuclq.student.dto.*; // (Import các DTO)
+import com.phuclq.student.types.InterestTermUnit;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,7 +44,7 @@ public class PledgeContractMapper {
         entity.setContractCode(dto.getContractCode());
         entity.setLoanAmount(dto.getLoanAmount());
         entity.setInterestTermValue(dto.getInterestTermValue());
-        entity.setInterestTermUnit(dto.getInterestTermUnit());
+        entity.setInterestTermUnit(InterestTermUnit.valueOf(dto.getInterestTermUnit().toUpperCase()));
         entity.setInterestRateValue(dto.getInterestRateValue());
         entity.setInterestRateUnit(dto.getInterestRateUnit());
         entity.setPaymentCount(dto.getPaymentCount());

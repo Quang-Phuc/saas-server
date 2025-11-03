@@ -1,5 +1,6 @@
 package com.phuclq.student.domain; // (Giả sử package của bạn)
 
+import com.phuclq.student.types.InterestTermUnit;
 import com.phuclq.student.types.LoanStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -77,7 +78,7 @@ public class Loan extends Auditable<String> {
      * Ví dụ: "Ngay", "Tuan", "Thang".
      */
     @Column(name = "interest_term_unit")
-    private String interestTermUnit;
+    private InterestTermUnit  interestTermUnit;
 
     /**
      * Giá trị của lãi suất (ví dụ: 1.5).

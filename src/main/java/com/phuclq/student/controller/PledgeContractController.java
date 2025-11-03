@@ -1,8 +1,15 @@
 package com.phuclq.student.controller; // (Thay đổi package cho đúng)
 
 import com.phuclq.student.domain.PledgeContract;
+import com.phuclq.student.dto.PledgeContractResponse;
+import com.phuclq.student.dto.PledgeSearchRequest;
+import com.phuclq.student.repository.PledgeRepository;
 import com.phuclq.student.service.PledgeContractService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,15 +21,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/pledges")
-// @CrossOrigin(origins = "*") // (Thêm nếu cần)
+@RequiredArgsConstructor
 public class PledgeContractController {
 
     private final PledgeContractService pledgeContractService;
+    private final PledgeRepository pledgeRepository;
 
-    @Autowired
-    public PledgeContractController(PledgeContractService pledgeContractService) {
-        this.pledgeContractService = pledgeContractService;
-    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createPledgeContract(
@@ -48,5 +52,17 @@ public class PledgeContractController {
         }
     }
 
-    // (Thêm các API GET, PUT, DELETE khác ở đây...)
+    @PostMapping("/search")
+    public Page<PledgeContractResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+        return pledgeRepository.searchPledges(
+                request.getKeyword(),
+                request.getStatus(),
+                request.getStoreId(),
+                request.getAssetType(),
+                request.getFromDate(),
+                request.getToDate(),
+                pageable
+        );
+    }
 }
