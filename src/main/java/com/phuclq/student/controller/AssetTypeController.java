@@ -2,6 +2,8 @@ package com.phuclq.student.controller;
 
 import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.AssetType;
+import com.phuclq.student.dto.AssetTypeDTO;
+import com.phuclq.student.dto.AssetTypeResponse;
 import com.phuclq.student.service.AssetTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,9 +25,9 @@ public class AssetTypeController {
         this.assetTypeService = assetTypeService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<AssetType>> getAll() {
-        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(assetTypeService.findAll()).getResponse();
+    @GetMapping("/store/{id}")
+    public ResponseEntity<List<AssetTypeResponse>> getAll(@PathVariable Long id) {
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(assetTypeService.findAll(id)).getResponse();
     }
 
     @GetMapping("/{id}")
@@ -36,7 +38,7 @@ public class AssetTypeController {
     }
 
     @PostMapping
-    public ResponseEntity<AssetType> create(@RequestBody AssetType assetType) {
+    public ResponseEntity<AssetType> create(@RequestBody AssetTypeDTO assetType) {
         AssetType saved = assetTypeService.save(assetType);
         return ResponseEntity.ok(saved);
     }

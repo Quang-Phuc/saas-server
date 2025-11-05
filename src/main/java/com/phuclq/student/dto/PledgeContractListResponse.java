@@ -70,6 +70,7 @@ public class PledgeContractListResponse {
         this.remainingPrincipal = remainingPrincipal;
         this.status = status;
         this.follower = follower;
+        this.assetType = assetType;
     }
 
 }

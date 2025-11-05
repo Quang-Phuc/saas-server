@@ -1,17 +1,19 @@
 package com.phuclq.student.service;
 
 import com.phuclq.student.domain.AssetType;
+import com.phuclq.student.dto.AssetTypeDTO;
+import com.phuclq.student.dto.AssetTypeResponse;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface AssetTypeService {
 
-    List<AssetType> findAll();
+    List<AssetTypeResponse> findAll(Long storeId);
 
     Optional<AssetType> findById(Integer id);
 
-    AssetType save(AssetType assetType);
+    AssetType save(AssetTypeDTO assetType);
 
     AssetType update(Integer id, AssetType assetType);
 

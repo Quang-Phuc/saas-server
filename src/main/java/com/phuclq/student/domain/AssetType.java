@@ -14,18 +14,28 @@ public class AssetType extends Auditable<String> {
     @Column(name = "ID")
     private Integer id;
 
-    @Column(name = "NAME", nullable = false, unique = true)
-    private String name; // Tên loại tài sản
+    @Column(name = "TYPE_CODE")
+    private String typeCode; // Tên loại tài sản
 
-    @Column(name = "DESCRIPTION", columnDefinition = "LONGTEXT")
-    private String description; // Mô tả chi tiết loại tài sản
+    @Column(name = "TYPE_NAME", columnDefinition = "LONGTEXT")
+    private String typeName; // Mô tả chi tiết loại tài sản
+
+    /**
+     * ID của cửa hàng/chi nhánh tạo ra hợp đồng này.
+     * Dùng để phân biệt dữ liệu giữa các cửa hàng.
+     */
+    @Column( name = "store_id")
+    private Long storeId;
+
+    @Column( name = "status")
+    private String status;
 
     @Override
     public String toString() {
         return "AssetType{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
+                ", name='" + typeCode + '\'' +
+                ", description='" + typeName + '\'' +
                 '}';
     }
 }
