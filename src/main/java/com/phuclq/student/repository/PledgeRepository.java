@@ -17,43 +17,43 @@ import java.util.Optional;
 @Repository
 public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 
-    @Query("SELECT new com.phuclq.student.dto.PledgeContractListResponse(" +
-            "pc.id, " +
-            "pc.contractCode, " +
-            "l.loanDate, " +
-            "l.dueDate, " +
-            "c.fullName, " +
-            "c.phoneNumber, " +
-            "ca.assetCode, " +
-            "l.loanAmount, " +
-            "CONCAT(l.interestRateValue, ' ', l.interestRateUnit), " +
-            "l.remainingPrincipal, " +
-            "l.status, " +
-            "pc.storeId" +
-            ") " +
-            "FROM PledgeContract pc " +
-            "JOIN Loan l ON pc.loanId = l.id " +
-            "JOIN Customer c ON pc.customerId = c.id " +
-            "LEFT JOIN CollateralAsset ca ON pc.collateralId = ca.id " +
-            "WHERE (:keyword IS NULL OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR c.phoneNumber LIKE CONCAT('%', :keyword, '%') " +
-            "OR l.contractCode LIKE CONCAT('%', :keyword, '%')) " +
-            "AND (:status IS NULL OR l.status = :status) " +
-            "AND (:storeId IS NULL OR pc.storeId = :storeId) " +
-            "AND (:assetType IS NULL OR ca.assetCode = :assetType) " +
-            "AND (:fromDate IS NULL OR l.loanDate >= :fromDate) " +
-            "AND (:toDate IS NULL OR l.loanDate <= :toDate) " +
-            "ORDER BY l.loanDate DESC"
-    )
-    Page<PledgeContractListResponse> searchPledges(
-            @Param("keyword") String keyword,
-            @Param("status") LoanStatus status,
-            @Param("storeId") String storeId,
-            @Param("assetType") String assetType,
-            @Param("fromDate") LocalDate fromDate,
-            @Param("toDate") LocalDate toDate,
-            Pageable pageable
-    );
+//    @Query("SELECT new com.phuclq.student.dto.PledgeContractListResponse(" +
+//            "pc.id, " +
+//            "pc.contractCode, " +
+//            "l.loanDate, " +
+//            "l.dueDate, " +
+//            "c.fullName, " +
+//            "c.phoneNumber, " +
+//            "ca.assetCode, " +
+//            "l.loanAmount, " +
+//            "CONCAT(l.interestRateValue, ' ', l.interestRateUnit), " +
+//            "l.remainingPrincipal, " +
+//            "l.status, " +
+//            "pc.storeId" +
+//            ") " +
+//            "FROM PledgeContract pc " +
+//            "JOIN Loan l ON pc.loanId = l.id " +
+//            "JOIN Customer c ON pc.customerId = c.id " +
+//            "LEFT JOIN CollateralAsset ca ON pc.collateralId = ca.id " +
+//            "WHERE (:keyword IS NULL OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+//            "OR c.phoneNumber LIKE CONCAT('%', :keyword, '%') " +
+//            "OR l.contractCode LIKE CONCAT('%', :keyword, '%')) " +
+//            "AND (:status IS NULL OR l.status = :status) " +
+//            "AND (:storeId IS NULL OR pc.storeId = :storeId) " +
+//            "AND (:assetType IS NULL OR ca.assetCode = :assetType) " +
+//            "AND (:fromDate IS NULL OR l.loanDate >= :fromDate) " +
+//            "AND (:toDate IS NULL OR l.loanDate <= :toDate) " +
+//            "ORDER BY l.loanDate DESC"
+//    )
+//    Page<PledgeContractListResponse> searchPledges(
+//            @Param("keyword") String keyword,
+//            @Param("status") LoanStatus status,
+//            @Param("storeId") String storeId,
+//            @Param("assetType") String assetType,
+//            @Param("fromDate") LocalDate fromDate,
+//            @Param("toDate") LocalDate toDate,
+//            Pageable pageable
+//    );
 
     @Query("SELECT new com.phuclq.student.dto.PledgeContractDetailResponse(" +
             "pc.id, " +

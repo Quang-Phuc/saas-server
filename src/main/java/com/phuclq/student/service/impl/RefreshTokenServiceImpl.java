@@ -3,13 +3,11 @@ package com.phuclq.student.service.impl;
 
 import com.phuclq.student.config.JwtTokenUtil;
 import com.phuclq.student.domain.RefreshToken;
-import com.phuclq.student.domain.TokenFireBase;
 import com.phuclq.student.domain.User;
 import com.phuclq.student.dto.JwtResponse;
 import com.phuclq.student.dto.authen.TokenRefreshRequest;
 import com.phuclq.student.exception.BusinessHandleException;
 import com.phuclq.student.repository.RefreshTokenRepository;
-import com.phuclq.student.repository.TokenFireBaseRepository;
 import com.phuclq.student.repository.UserRepository;
 import com.phuclq.student.security.JwtUtils;
 import com.phuclq.student.service.JwtUserDetailsService;
@@ -50,8 +48,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
-    @Autowired
-    private TokenFireBaseRepository tokenFireBaseRepository;
 
     public Optional<RefreshToken> findByToken(String token) {
         return refreshTokenRepository.findByToken(token);
@@ -140,12 +136,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     public void deleteFireBaseToken(TokenRefreshRequest tokenRefreshRequest, Integer id) {
-        if (Objects.nonNull(tokenRefreshRequest.getTokenFireBase())) {
-            TokenFireBase allByTokenAndUserId = tokenFireBaseRepository.findAllByTokenAndUserId(tokenRefreshRequest.getTokenFireBase(), id);
-            if (Objects.nonNull(allByTokenAndUserId)) {
-                tokenFireBaseRepository.delete(allByTokenAndUserId);
 
-            }
-        }
     }
 }

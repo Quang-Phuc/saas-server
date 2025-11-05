@@ -16,7 +16,6 @@ import com.phuclq.student.service.UserService;
 import com.phuclq.student.types.FileType;
 import com.phuclq.student.utils.AddWatermarkBase64;
 import com.phuclq.student.utils.Base64ToMultipartFile;
-import com.phuclq.student.utils.MD5Utils;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -106,12 +105,10 @@ public class AttachmentServiceImpl implements AttachmentService {
                         requestId, x.getFile().getContentType(),
                         s3StorageService.uploadFileToS3(x), url, x.getType(), dataUir, 0);
                 if (x.getType().equals(FileType.FILE_UPLOAD.getName())) {
-                    String md5 = MD5Utils.calculateMD5(x.getFile());
-                    attachment.setCodeFile(md5);
                 }
                 attachments.add(attachment);
 
-            } catch (IOException | NoSuchAlgorithmException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });

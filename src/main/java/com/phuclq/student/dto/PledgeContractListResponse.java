@@ -59,6 +59,7 @@ public class PledgeContractListResponse {
                                       LoanStatus status, String follower) {
         this.id = id;
         this.contractCode = contractCode;
+        this.assetType = assetType;
         this.loanDate = loanDate;
         this.dueDate = dueDate;
         this.customerName = customerName;

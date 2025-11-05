@@ -8,7 +8,6 @@ import com.phuclq.student.domain.UsersStores;
 import com.phuclq.student.dto.*;
 import com.phuclq.student.repository.UsersStoresRepository;
 import com.phuclq.student.service.AttachmentService;
-import com.phuclq.student.service.ConfirmationTokenService;
 import com.phuclq.student.service.UserService;
 import com.phuclq.student.service.UsersStoresService;
 import com.phuclq.student.utils.PaginationUtil;
@@ -36,8 +35,6 @@ public class UserController {
     @Autowired
     private UserService userService;
     @Autowired
-    private ConfirmationTokenService confirmationTokenService;
-    @Autowired
     private UsersStoresService usersStoresService;
 
 
@@ -56,8 +53,7 @@ public class UserController {
 
     @GetMapping("activate-account")
     public ResponseEntity<User> confirmUserAccount(@RequestParam("token") String confirmationToken) {
-        User user = confirmationTokenService.confirmUserAccount(confirmationToken);
-        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(user).getResponse();
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(null).getResponse();
     }
 
     @GetMapping("/get-user")

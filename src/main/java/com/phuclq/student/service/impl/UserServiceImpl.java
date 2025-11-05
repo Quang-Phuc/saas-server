@@ -1,7 +1,6 @@
 package com.phuclq.student.service.impl;
 
 import com.phuclq.student.config.JwtTokenUtil;
-import com.phuclq.student.dao.UsersDao;
 import com.phuclq.student.domain.*;
 import com.phuclq.student.dto.*;
 import com.phuclq.student.exception.BusinessHandleException;
@@ -48,8 +47,6 @@ public class UserServiceImpl implements UserService {
     private final UserLicenseRepository userLicenseRepository;
     private final UsersStoresRepository usersStoresRepository;
     @Autowired
-    UsersDao usersDao;
-    @Autowired
     RefreshTokenService refreshTokenService;
     @Autowired
     private UserRepository userRepository;
@@ -65,8 +62,6 @@ public class UserServiceImpl implements UserService {
     private JwtUserDetailsService userDetailsService;
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
-    @Autowired
-    private TokenFireBaseRepository tokenFireBaseRepository;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -196,15 +191,7 @@ public class UserServiceImpl implements UserService {
         return new PageImpl<UserDTO>(list, pageable, page.getTotalElements());
     }
 
-    @Override
-    public UserResultDto getUser2(FileHomePageRequest request, Pageable pageable) {
-        Page<UserAdminResult> fileResultDto = usersDao.listUserAdmin(request, pageable);
-        UserResultDto userResultDto = new UserResultDto();
-        userResultDto.setList(fileResultDto.getContent());
-        PaginationModel paginationModel = new PaginationModel(fileResultDto.getPageable().getPageNumber(), fileResultDto.getPageable().getPageSize(), (int) fileResultDto.getTotalElements());
-        userResultDto.setPaginationModel(paginationModel);
-        return userResultDto;
-    }
+
 
     @Override
     public Optional<User> findUserById(Integer id) {
@@ -466,11 +453,6 @@ public class UserServiceImpl implements UserService {
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
 
-        // 4️⃣ Nếu có token Firebase → lưu lại
-        if (Objects.nonNull(loginRequest.getTokenFireBase())) {
-            tokenFireBaseRepository.deleteAll(tokenFireBaseRepository.findAllByToken(loginRequest.getTokenFireBase()));
-            tokenFireBaseRepository.save(new TokenFireBase(user.getId(), loginRequest.getTokenFireBase(), null));
-        }
 
         // 5️⃣ Tạo response
 
@@ -538,5 +520,10 @@ public class UserServiceImpl implements UserService {
                 .storeAddress((String) map.get("store_address"))
                 .createdDate(map.get("created_date") != null ? map.get("created_date").toString() : null)
                 .build());
+    }
+
+    @Override
+    public UserResultDto getUser2(FileHomePageRequest request, Pageable pageable) {
+        return null;
     }
 }
