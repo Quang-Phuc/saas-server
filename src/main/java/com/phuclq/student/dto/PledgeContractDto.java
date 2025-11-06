@@ -1,12 +1,15 @@
 package com.phuclq.student.dto;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class PledgeContractDto {
     private Long storeId;
     private CustomerDto customer;
     private LoanDto loan;
-    private CollateralDto collateral;
     private FeesDto fees;
+
+    // JSON trả về "collateral": [ {...}, {...} ]
+    private List<CollateralDto> collateral;
 }

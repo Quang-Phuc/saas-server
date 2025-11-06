@@ -1,5 +1,6 @@
 package com.phuclq.student.domain; // (Giả sử package của bạn)
 
+import com.phuclq.student.types.InterestPaymentType;
 import com.phuclq.student.types.InterestTermUnit;
 import com.phuclq.student.types.LoanStatus;
 import lombok.AllArgsConstructor;
@@ -34,18 +35,9 @@ public class Loan extends Auditable<String> {
     @Column(name = "id")
     private Long id;
 
-    /**
-     * Tên tài sản cầm cố (ví dụ: "Xe Wave RSX", "Laptop Dell XPS 15").
-     */
-    @Column(name = "asset_name")
-    private String assetName;
+    @Column(name = "store_id", nullable = false)
+    private Long storeId; // thuộc cửa hàng nào
 
-    /**
-     * Loại tài sản cầm cố (ví dụ: "Xe máy", "Laptop", "Điện thoại").
-     * Thường dùng để phân loại.
-     */
-    @Column(name = "asset_type")
-    private String assetType;
 
     /**
      * Ngày khách hàng vay tiền (ngày bắt đầu hợp đồng).
@@ -105,7 +97,7 @@ public class Loan extends Auditable<String> {
      * Ví dụ: "Truoc" (Trả lãi định kỳ), "Sau" (Trả góp gốc + lãi).
      */
     @Column(name = "interest_payment_type")
-    private String interestPaymentType;
+    private InterestPaymentType interestPaymentType;
 
     /**
      * Ghi chú chung cho hợp đồng/khoản vay.

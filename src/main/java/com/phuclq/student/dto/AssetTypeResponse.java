@@ -16,6 +16,7 @@ public class AssetTypeResponse {
     public static class AttributeDto {
         private Integer id;
         private String label;
+        private String value;
         private Long assetTypeId;
     }
 }

@@ -1,15 +1,11 @@
 package com.phuclq.student.dto;
 
 import lombok.Data;
-
 import java.math.BigDecimal;
 
 @Data
 public class LoanDto {
-    // (Các trường khớp với ...loanInfo, ...loanExtraInfo)
-    private String assetName;
-    private String assetType;
-    private String loanDate; // Nhận String từ JSON
+    private String loanDate; // dạng "yyyy-MM-dd"
     private String contractCode;
     private BigDecimal loanAmount;
     private Integer interestTermValue;

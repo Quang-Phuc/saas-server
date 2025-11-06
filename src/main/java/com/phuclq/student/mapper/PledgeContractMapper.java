@@ -2,6 +2,7 @@ package com.phuclq.student.mapper;
 
 import com.phuclq.student.domain.*; // (Import các Entity)
 import com.phuclq.student.dto.*; // (Import các DTO)
+import com.phuclq.student.types.InterestPaymentType;
 import com.phuclq.student.types.InterestTermUnit;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
@@ -19,9 +20,12 @@ public class PledgeContractMapper {
         return LocalDate.parse(dateStr, DATE_FORMATTER);
     }
 
-    public Customer toCustomerEntity(CustomerDto dto) {
+    public Customer toCustomerEntity(Long storeId,CustomerDto dto) {
         if (dto == null) return null;
+
         Customer entity = new Customer();
+
+        // Thông tin định danh cơ bản
         entity.setFullName(dto.getFullName());
         entity.setDateOfBirth(parseDate(dto.getDateOfBirth()));
         entity.setIdentityNumber(dto.getIdentityNumber());
@@ -29,45 +33,107 @@ public class PledgeContractMapper {
         entity.setPermanentAddress(dto.getPermanentAddress());
         entity.setIssueDate(parseDate(dto.getIssueDate()));
         entity.setIssuePlace(dto.getIssuePlace());
+
+        // Thông tin công việc và liên hệ
         entity.setOccupation(dto.getOccupation());
+        entity.setWorkplace(dto.getWorkplace());
+        entity.setHouseholdRegistration(dto.getHouseholdRegistration());
         entity.setEmail(dto.getEmail());
-        // (Lưu ý: idUrl (ảnh chân dung) sẽ được gán trong Service sau khi upload)
+        entity.setIncomeVndPerMonth(dto.getIncomeVndPerMonth());
+        entity.setNote(dto.getNote());
+
+        // Thông tin người liên hệ
+        entity.setContactPerson(dto.getContactPerson());
+        entity.setContactPhone(dto.getContactPhone());
+
+        // Thông tin vợ/chồng
+        entity.setSpouseName(dto.getSpouseName());
+        entity.setSpousePhone(dto.getSpousePhone());
+        entity.setSpouseOccupation(dto.getSpouseOccupation());
+
+        // Thông tin cha mẹ
+        entity.setFatherName(dto.getFatherName());
+        entity.setFatherPhone(dto.getFatherPhone());
+        entity.setFatherOccupation(dto.getFatherOccupation());
+        entity.setMotherName(dto.getMotherName());
+        entity.setMotherPhone(dto.getMotherPhone());
+        entity.setMotherOccupation(dto.getMotherOccupation());
+
+        // Mã khách hàng & liên kết hệ thống
+        entity.setCustomerCode(dto.getCustomerCode());
+        entity.setStoreId(storeId);
+
+
+
         return entity;
     }
 
-    public Loan toLoanEntity(LoanDto dto) {
+
+
+    public Loan toLoanEntity(Long storeId,LoanDto dto) {
         if (dto == null) return null;
         Loan entity = new Loan();
-        entity.setAssetName(dto.getAssetName());
-        entity.setAssetType(dto.getAssetType());
+
         entity.setLoanDate(parseDate(dto.getLoanDate()));
+        entity.setStoreId(storeId);
         entity.setContractCode(dto.getContractCode());
         entity.setLoanAmount(dto.getLoanAmount());
         entity.setInterestTermValue(dto.getInterestTermValue());
-        entity.setInterestTermUnit(InterestTermUnit.valueOf(dto.getInterestTermUnit().toUpperCase()));
+
+        // ✅ Xử lý mềm cho enum để tránh lỗi khi nhập sai case
+        try {
+            entity.setInterestTermUnit(InterestTermUnit.valueOf(dto.getInterestTermUnit().toUpperCase()));
+        } catch (Exception e) {
+            entity.setInterestTermUnit(null);
+        }
+
         entity.setInterestRateValue(dto.getInterestRateValue());
         entity.setInterestRateUnit(dto.getInterestRateUnit());
         entity.setPaymentCount(dto.getPaymentCount());
-        entity.setInterestPaymentType(dto.getInterestPaymentType());
+
+        try {
+            entity.setInterestPaymentType(InterestPaymentType.valueOf(dto.getInterestPaymentType().toUpperCase()));
+        } catch (Exception e) {
+            entity.setInterestPaymentType(null);
+        }
+
         entity.setNote(dto.getNote());
         entity.setLoanStatus(dto.getLoanStatus());
         entity.setPartnerType(dto.getPartnerType());
         entity.setFollower(dto.getFollower());
         entity.setCustomerSource(dto.getCustomerSource());
+
         return entity;
     }
 
+
     public CollateralAsset toCollateralAssetEntity(CollateralDto dto) {
         if (dto == null) return null;
+
         CollateralAsset entity = new CollateralAsset();
-        entity.setValuation(dto.getValuation());
-        entity.setLicensePlate(dto.getLicensePlate());
-        entity.setChassisNumber(dto.getChassisNumber());
-        entity.setEngineNumber(dto.getEngineNumber());
-        entity.setWarehouseId(dto.getWarehouseId());
+
+        // ✅ Gán đầy đủ các trường theo JSON
+        entity.setAssetName(dto.getAssetName());
+        entity.setAssetType(dto.getAssetType());
         entity.setAssetCode(dto.getAssetCode());
+        entity.setValuation(dto.getValuation());
+        entity.setWarehouseId(dto.getWarehouseId());
         entity.setAssetNote(dto.getAssetNote());
-        entity.setStatus("TrongKho"); // (Gán trạng thái mặc định)
+
+        // ✅ Trạng thái mặc định
+        entity.setStatus("TrongKho");
+
         return entity;
     }
+
+    public CollateralAttribute toCollateralAttributeEntity(AssetTypeResponse.AttributeDto dto, Long collateralAssetId) {
+        if (dto == null) return null;
+        CollateralAttribute entity = new CollateralAttribute();
+        entity.setLabel(dto.getLabel());
+        entity.setValue(dto.getValue());
+        entity.setCollateralAssetId(collateralAssetId);
+        return entity;
+    }
+
+
 }

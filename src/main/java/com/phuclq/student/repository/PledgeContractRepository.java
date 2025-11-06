@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -52,6 +53,9 @@ public interface PledgeContractRepository extends JpaRepository<PledgeContract, 
 //            @Param("toDate") LocalDate toDate,
 //            @Param("follower") String follower
 //    );
+
+    @Query("SELECT COUNT(p) FROM PledgeContract p WHERE p.createdDate >= :start AND p.createdDate < :end")
+    Long countByCreatedDateBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
 
 }

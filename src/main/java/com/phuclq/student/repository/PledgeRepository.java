@@ -55,33 +55,33 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 //            Pageable pageable
 //    );
 
-    @Query("SELECT new com.phuclq.student.dto.PledgeContractDetailResponse(" +
-            "pc.id, " +
-            "c.fullName, c.phoneNumber, c.dateOfBirth, c.identityNumber, c.issueDate, c.issuePlace, " +
-            "c.permanentAddress, c.idUrl, " +
-            "c.customerCode, c.occupation, c.workplace, c.householdRegistration, c.email, " +
-            "c.incomeVndPerMonth, c.contactPerson, c.contactPhone, c.note, " +
-            "c.spouseName, c.spousePhone, c.spouseOccupation, " +
-            "c.fatherName, c.fatherPhone, c.fatherOccupation, " +
-            "c.motherName, c.motherPhone, c.motherOccupation, " +
-            "l.assetName, l.assetType, l.loanDate, l.loanAmount, " +
-            "l.interestTermValue, l.interestTermUnit, l.interestRateValue, l.interestRateUnit, " +
-            "l.interestPaymentType, l.paymentCount, l.note, " +
-            "l.loanStatus, l.partnerType, l.follower, l.customerSource, " +
-            "ca.valuation, ca.licensePlate, ca.chassisNumber, ca.engineNumber, " +
-            "ca.warehouseId, ca.assetCode, ca.assetNote, " +
-            "wf.value, wf.valueType, " +
-            "sf.value, sf.valueType, " +
-            "rf.value, rf.valueType, " +
-            "mf.value, mf.valueType) " +
-            "FROM PledgeContract pc " +
-            "JOIN Customer c ON pc.customerId = c.id " +
-            "LEFT JOIN Loan l ON pc.loanId = l.id " +
-            "LEFT JOIN CollateralAsset ca ON pc.collateralId = ca.id " +
-            "LEFT JOIN FeeDetail wf ON wf.contractId = pc.id AND wf.feeType = 'WAREHOUSE' " +
-            "LEFT JOIN FeeDetail sf ON sf.contractId = pc.id AND sf.feeType = 'STORAGE' " +
-            "LEFT JOIN FeeDetail rf ON rf.contractId = pc.id AND rf.feeType = 'RISK' " +
-            "LEFT JOIN FeeDetail mf ON mf.contractId = pc.id AND mf.feeType = 'MANAGEMENT' " +
-            "WHERE pc.id = :id")
-    Optional<PledgeContractDetailResponse> findDetailById(@Param("id") Long id);
+//    @Query("SELECT new com.phuclq.student.dto.PledgeContractDetailResponse(" +
+//            "pc.id, " +
+//            "c.fullName, c.phoneNumber, c.dateOfBirth, c.identityNumber, c.issueDate, c.issuePlace, " +
+//            "c.permanentAddress, c.idUrl, " +
+//            "c.customerCode, c.occupation, c.workplace, c.householdRegistration, c.email, " +
+//            "c.incomeVndPerMonth, c.contactPerson, c.contactPhone, c.note, " +
+//            "c.spouseName, c.spousePhone, c.spouseOccupation, " +
+//            "c.fatherName, c.fatherPhone, c.fatherOccupation, " +
+//            "c.motherName, c.motherPhone, c.motherOccupation, " +
+//            "l.assetName, l.assetType, l.loanDate, l.loanAmount, " +
+//            "l.interestTermValue, l.interestTermUnit, l.interestRateValue, l.interestRateUnit, " +
+//            "l.interestPaymentType, l.paymentCount, l.note, " +
+//            "l.loanStatus, l.partnerType, l.follower, l.customerSource, " +
+//            "ca.valuation, ca.licensePlate, ca.chassisNumber, ca.engineNumber, " +
+//            "ca.warehouseId, ca.assetCode, ca.assetNote, " +
+//            "wf.value, wf.valueType, " +
+//            "sf.value, sf.valueType, " +
+//            "rf.value, rf.valueType, " +
+//            "mf.value, mf.valueType) " +
+//            "FROM PledgeContract pc " +
+//            "JOIN Customer c ON pc.customerId = c.id " +
+//            "LEFT JOIN Loan l ON pc.loanId = l.id " +
+//            "LEFT JOIN CollateralAsset ca ON pc.collateralId = ca.id " +
+//            "LEFT JOIN FeeDetail wf ON wf.contractId = pc.id AND wf.feeType = 'WAREHOUSE' " +
+//            "LEFT JOIN FeeDetail sf ON sf.contractId = pc.id AND sf.feeType = 'STORAGE' " +
+//            "LEFT JOIN FeeDetail rf ON rf.contractId = pc.id AND rf.feeType = 'RISK' " +
+//            "LEFT JOIN FeeDetail mf ON mf.contractId = pc.id AND mf.feeType = 'MANAGEMENT' " +
+//            "WHERE pc.id = :id")
+//    Optional<PledgeContractDetailResponse> findDetailById(@Param("id") Long id);
 }

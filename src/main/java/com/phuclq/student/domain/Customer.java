@@ -3,6 +3,7 @@ package com.phuclq.student.domain;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 
@@ -16,6 +17,8 @@ public class Customer extends Auditable<String> {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "store_id", nullable = false)
+    private Long storeId; // thuộc cửa hàng nào
 
     // ===== Thông tin cơ bản =====
     @Column(name = "customer_code")
@@ -58,7 +61,7 @@ public class Customer extends Auditable<String> {
     private String workplace; // Nơi làm việc
 
     @Column(name = "income_vnd_per_month")
-    private Long incomeVndPerMonth; // Thu nhập (VNĐ/tháng)
+    private BigDecimal incomeVndPerMonth; // Thu nhập (VNĐ/tháng)
 
     @Column(name = "contact_person")
     private String contactPerson; // Người liên hệ
@@ -116,35 +119,7 @@ public class Customer extends Auditable<String> {
     @Column(length = 1024, name = "id_url")
     private String idUrl; // URL ảnh chân dung
 
-    @Override
-    public String toString() {
-        return "Customer{" +
-                "id=" + id +
-                ", customerCode='" + customerCode + '\'' +
-                ", fullName='" + fullName + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                ", dateOfBirth=" + dateOfBirth +
-                ", identityNumber='" + identityNumber + '\'' +
-                ", issueDate=" + issueDate +
-                ", issuePlace='" + issuePlace + '\'' +
-                ", permanentAddress='" + permanentAddress + '\'' +
-                ", householdRegistration='" + householdRegistration + '\'' +
-                ", gender='" + gender + '\'' +
-                ", email='" + email + '\'' +
-                ", occupation='" + occupation + '\'' +
-                ", workplace='" + workplace + '\'' +
-                ", incomeVndPerMonth=" + incomeVndPerMonth +
-                ", contactPerson='" + contactPerson + '\'' +
-                ", contactPhone='" + contactPhone + '\'' +
-                ", note='" + note + '\'' +
-                ", spouseName='" + spouseName + '\'' +
-                ", fatherName='" + fatherName + '\'' +
-                ", motherName='" + motherName + '\'' +
-                ", loanStatus='" + loanStatus + '\'' +
-                ", partnerType='" + partnerType + '\'' +
-                ", customerType='" + customerType + '\'' +
-                ", follower='" + follower + '\'' +
-                ", customerSource='" + customerSource + '\'' +
-                '}';
-    }
+    @Column(name = "description", columnDefinition = "LONGTEXT")
+    private String description;
+
 }

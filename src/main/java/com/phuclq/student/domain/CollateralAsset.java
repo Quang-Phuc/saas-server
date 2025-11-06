@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 /**
  * Bảng này lưu trữ thông tin chi tiết về các tài sản thế chấp (ví dụ: xe máy, laptop)
@@ -28,6 +29,12 @@ public class CollateralAsset extends Auditable<String> {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "asset_name")
+    private String assetName;
+
+    @Column(name = "asset_type")
+    private Long assetType;
+
     /**
      * Mã tài sản nội bộ (do cửa hàng tự định nghĩa, ví dụ: "XM-001").
      * Có thể dùng để tra cứu nhanh.
@@ -35,30 +42,13 @@ public class CollateralAsset extends Auditable<String> {
     @Column(name = "asset_code")
     private String assetCode;
 
-    /**
-     * Biển kiểm soát (biển số xe) của tài sản (nếu là xe).
-     */
-    @Column(name = "license_plate")
-    private String licensePlate;
-
-    /**
-     * Số khung của xe (nếu tài sản là xe).
-     */
-    @Column(name = "chassis_number")
-    private String chassisNumber;
-
-    /**
-     * Số máy của xe (nếu tài sản là xe).
-     */
-    @Column(name = "engine_number")
-    private String engineNumber;
 
     /**
      * Giá trị định giá của tài sản (đơn vị: VNĐ).
      * (Lưu ý: BigDecimal thường được khuyên dùng cho tiền tệ).
      */
     @Column(name = "valuation")
-    private Long valuation;
+    private BigDecimal valuation;
 
     /**
      * Ghi chú chi tiết về tình trạng hoặc thông tin khác của tài sản.

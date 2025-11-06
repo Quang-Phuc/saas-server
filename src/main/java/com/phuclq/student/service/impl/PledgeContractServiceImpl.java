@@ -2,10 +2,7 @@ package com.phuclq.student.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.phuclq.student.domain.*;
-import com.phuclq.student.dto.CustomerDto;
-import com.phuclq.student.dto.FeesDto;
-import com.phuclq.student.dto.PledgeContractDetailResponse;
-import com.phuclq.student.dto.PledgeContractDto;
+import com.phuclq.student.dto.*;
 import com.phuclq.student.mapper.PledgeContractMapper;
 import com.phuclq.student.repository.*;
 import com.phuclq.student.service.FileStorageService;
@@ -21,8 +18,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.phuclq.student.types.FileType.FILE_AVATAR;
 import static com.phuclq.student.types.FileType.PLEDGE_CONTRACT_FILE;
@@ -45,6 +45,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     private final S3StorageService s3StorageService;
     private final PaymentScheduleRepository paymentScheduleRepository;
     private final PledgeRepository pledgeRepository;
+    private final CollateralAttributeRepository collateralAttributeRepository;
 
 
     @Override
@@ -53,69 +54,88 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         try {
             // 1️⃣ Parse JSON → DTO
             PledgeContractDto dto = objectMapper.readValue(payloadJson, PledgeContractDto.class);
+            Long storeId = dto.getStoreId();
 
             // 2️⃣ Upload ảnh chân dung (nếu có)
             Attachment portraitUpload = null;
             String portraitUrl = null;
             if (portraitFile != null && !portraitFile.isEmpty()) {
-//                portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
+                // portraitUpload = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName());
                 portraitUrl = "portraitUpload.getUrl()";
             }
 
             // 3️⃣ Lưu Customer (tìm hoặc tạo mới)
-            Customer savedCustomer = findOrCreateCustomer(dto.getCustomer(), portraitUrl);
+            Customer savedCustomer = findOrCreateCustomer( storeId,dto.getCustomer(), portraitUrl);
 
             // 4️⃣ Lưu Loan
-            Loan loanEntity = mapper.toLoanEntity(dto.getLoan());
-            if (!InterestPaymentType.isValid(loanEntity.getInterestPaymentType())) {
-                throw new IllegalArgumentException("Loại thanh toán lãi không hợp lệ: " + loanEntity.getInterestPaymentType());
-            }
+            Loan loanEntity = mapper.toLoanEntity(storeId,dto.getLoan());
+            loanEntity.setContractCode(generateContractCode());
+
             Loan savedLoan = loanRepository.save(loanEntity);
 
-            // 5️⃣ Lưu CollateralAsset (Tài sản thế chấp)
-            CollateralAsset collateralEntity = mapper.toCollateralAssetEntity(dto.getCollateral());
-            CollateralAsset savedCollateral = collateralRepository.save(collateralEntity);
+            // 5️⃣ Lưu danh sách tài sản thế chấp
+            List<CollateralAsset> savedCollaterals = new ArrayList<>();
 
-            // 6️⃣ Tạo và lưu Hợp đồng chính
+            if (dto.getCollateral() != null && !dto.getCollateral().isEmpty()) {
+                for (CollateralDto colDto : dto.getCollateral()) {
+                    // Lưu asset trước
+                    CollateralAsset entity = mapper.toCollateralAssetEntity(colDto);
+                    CollateralAsset saved = collateralRepository.save(entity);
+                    savedCollaterals.add(saved);
+
+                    // Sau khi lưu asset thì lưu các attributes đi kèm
+                    if (colDto.getAttributes() != null && !colDto.getAttributes().isEmpty()) {
+                        List<CollateralAttribute> attributes = colDto.getAttributes().stream()
+                                .map(attr -> mapper.toCollateralAttributeEntity(attr, saved.getId()))
+                                .collect(Collectors.toList());
+                        collateralAttributeRepository.saveAll(attributes);
+                    }
+                }
+            }
+
+
+            // 6️⃣ Tạo và lưu hợp đồng chính
             PledgeContract contractEntity = PledgeContract.builder()
                     .storeId(dto.getStoreId())
                     .customerId(savedCustomer.getId())
                     .loanId(savedLoan.getId())
-                    .collateralId(savedCollateral.getId())
+                    // Giả sử 1 hợp đồng có thể có nhiều tài sản → lưu tạm cái đầu tiên
+                    .collateralId(savedCollaterals.isEmpty() ? null : savedCollaterals.get(0).getId())
                     .build();
 
             PledgeContract savedContract = contractRepository.save(contractEntity);
 
-            // 7️⃣ Cập nhật lại liên kết 2 chiều
-            savedCollateral.setContractId(savedContract.getId());
-            collateralRepository.save(savedCollateral);
+            // 7️⃣ Cập nhật lại liên kết 2 chiều giữa contract ↔ collaterals
+            for (CollateralAsset asset : savedCollaterals) {
+                asset.setContractId(savedContract.getId());
+                collateralRepository.save(asset);
+            }
 
             // 8️⃣ Sinh lịch trả lãi (PaymentSchedule)
             generatePaymentSchedule(savedLoan, savedContract.getId());
 
-            // 9️⃣ Lưu các loại phí
+            // 9️⃣ Lưu thông tin các loại phí
             saveFeeDetails(dto.getFees(), savedContract.getId());
 
             // 🔟 Lưu file đính kèm (nếu có)
-//            if (attachmentFiles != null && !attachmentFiles.isEmpty()) {
-//                for (MultipartFile file : attachmentFiles) {
-//                    if (file == null || file.isEmpty()) continue;
-//                    try {
-//                        Attachment uploaded = s3StorageService.uploadFileToS3(file, null, PLEDGE_CONTRACT_FILE.getName());
-//                        uploaded.setRequestId(savedContract.getId().intValue());
-//                        attachmentRepository.save(uploaded);
-//                    } catch (Exception ex) {
-//                        // Chỉ log lỗi, không rollback toàn bộ
-//                        System.err.println("⚠️ Upload file thất bại: " + file.getOriginalFilename());
-//                    }
+//        if (attachmentFiles != null && !attachmentFiles.isEmpty()) {
+//            for (MultipartFile file : attachmentFiles) {
+//                if (file == null || file.isEmpty()) continue;
+//                try {
+//                    Attachment uploaded = s3StorageService.uploadFileToS3(file, null, PLEDGE_CONTRACT_FILE.getName());
+//                    uploaded.setRequestId(savedContract.getId().intValue());
+//                    attachmentRepository.save(uploaded);
+//                } catch (Exception ex) {
+//                    System.err.println("⚠️ Upload file thất bại: " + file.getOriginalFilename());
 //                }
 //            }
-//
-//            // 11️⃣ Lưu ảnh chân dung (nếu có)
-//            if (portraitUpload != null) {
-//                portraitUpload.setRequestId(savedContract.getId().intValue());
-//                attachmentRepository.save(portraitUpload);
-//            }
+//        }
+
+            // 11️⃣ Lưu ảnh chân dung (nếu có)
+//        if (portraitUpload != null) {
+//            portraitUpload.setRequestId(savedContract.getId().intValue());
+//            attachmentRepository.save(portraitUpload);
+//        }
 
             return savedContract;
 
@@ -123,6 +143,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             throw new RuntimeException("Lỗi khi tạo hợp đồng: " + e.getMessage(), e);
         }
     }
+
 
     @Override
     public PledgeContractDetailResponse getPledgeDetail(Long id) {
@@ -158,11 +179,11 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             BigDecimal principalAmount = BigDecimal.ZERO;
 
             // 👉 Nếu loại trả là "trả góp từng kỳ"
-            if ("INSTALLMENT".equalsIgnoreCase(loan.getInterestPaymentType())) {
+            if ("INSTALLMENT".equalsIgnoreCase(loan.getInterestPaymentType().name())) {
                 principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
             }
             // 👉 Nếu loại trả là "trả gốc cuối kỳ"
-            else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType()) && i == count) {
+            else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType().name()) && i == count) {
                 principalAmount = principal;
             }
 
@@ -266,7 +287,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     /**
      * Hàm helper: Tìm khách hàng bằng SĐT/CCCD, nếu không có thì tạo mới
      */
-    private Customer findOrCreateCustomer(CustomerDto dto, String portraitUrl) {
+    private Customer findOrCreateCustomer(Long storeId,CustomerDto dto, String portraitUrl) {
         if (dto == null) {
             throw new IllegalArgumentException("Thông tin khách hàng không được rỗng");
         }
@@ -286,7 +307,8 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             customerToSave = existing.get();
             // (Bạn có thể thêm logic cập nhật thông tin khách hàng cũ ở đây nếu muốn)
         } else {
-            customerToSave = mapper.toCustomerEntity(dto);
+
+            customerToSave = mapper.toCustomerEntity( storeId,dto);
         }
 
         // Luôn cập nhật/gán ảnh chân dung mới nhất (nếu có upload)
@@ -296,6 +318,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
 
         return customerRepository.save(customerToSave);
     }
+
 
     /**
      * Hàm helper: Lưu 4 loại phí vào bảng FeeDetail
@@ -342,5 +365,14 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             fee.setValue(feesDto.getManagementFee().getValue());
             feeDetailRepository.save(fee);
         }
+    }
+    private String generateContractCode() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        Long countToday = contractRepository.countByCreatedDateBetween(
+                LocalDate.now().atStartOfDay(),
+                LocalDate.now().plusDays(1).atStartOfDay()
+        );
+        String sequencePart = String.format("%03d", countToday + 1);
+        return "PLEDGE-" + datePart + "-" + sequencePart;
     }
 }
