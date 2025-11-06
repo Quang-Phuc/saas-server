@@ -20,4 +20,11 @@ public class Warehouse extends Auditable<String> {
 
     @Column(name = "DESCRIPTION", columnDefinition = "LONGTEXT")
     private String description;
+
+    /**
+     * ID của cửa hàng/chi nhánh tạo ra hợp đồng này.
+     * Dùng để phân biệt dữ liệu giữa các cửa hàng.
+     */
+    @Column( name = "store_id")
+    private Long storeId;
 }

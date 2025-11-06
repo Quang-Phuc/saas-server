@@ -31,8 +31,9 @@ public class WarehouseController {
                 .orElseThrow(() -> new RuntimeException("Warehouse not found with id " + id));
     }
 
-    @PostMapping
-    public Warehouse create(@RequestBody Warehouse warehouse) {
+    @PostMapping("/store/{id}")
+    public Warehouse create(@RequestBody Warehouse warehouse,@PathVariable Long id) {
+        warehouse.setStoreId(id);
         return warehouseService.save(warehouse);
     }
 
