@@ -69,7 +69,6 @@ public class PledgeContractServiceImpl implements PledgeContractService {
 
             // 4️⃣ Lưu Loan
             Loan loanEntity = mapper.toLoanEntity(storeId,dto.getLoan());
-            loanEntity.setContractCode(generateContractCode());
 
             Loan savedLoan = loanRepository.save(loanEntity);
 
@@ -79,7 +78,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             if (dto.getCollateral() != null && !dto.getCollateral().isEmpty()) {
                 for (CollateralDto colDto : dto.getCollateral()) {
                     // Lưu asset trước
-                    CollateralAsset entity = mapper.toCollateralAssetEntity(colDto);
+                    CollateralAsset entity = mapper.toCollateralAssetEntity(storeId,colDto);
                     CollateralAsset saved = collateralRepository.save(entity);
                     savedCollaterals.add(saved);
 
@@ -99,9 +98,9 @@ public class PledgeContractServiceImpl implements PledgeContractService {
                     .storeId(dto.getStoreId())
                     .customerId(savedCustomer.getId())
                     .loanId(savedLoan.getId())
-                    // Giả sử 1 hợp đồng có thể có nhiều tài sản → lưu tạm cái đầu tiên
-                    .collateralId(savedCollaterals.isEmpty() ? null : savedCollaterals.get(0).getId())
                     .build();
+
+            contractEntity.setContractCode(generateContractCode());
 
             PledgeContract savedContract = contractRepository.save(contractEntity);
 

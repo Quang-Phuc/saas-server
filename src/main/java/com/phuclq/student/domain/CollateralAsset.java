@@ -36,14 +36,6 @@ public class CollateralAsset extends Auditable<String> {
     private Long assetType;
 
     /**
-     * Mã tài sản nội bộ (do cửa hàng tự định nghĩa, ví dụ: "XM-001").
-     * Có thể dùng để tra cứu nhanh.
-     */
-    @Column(name = "asset_code")
-    private String assetCode;
-
-
-    /**
      * Giá trị định giá của tài sản (đơn vị: VNĐ).
      * (Lưu ý: BigDecimal thường được khuyên dùng cho tiền tệ).
      */
@@ -75,4 +67,11 @@ public class CollateralAsset extends Auditable<String> {
      */
     @Column(name = "status")
     private String status;
+
+    /**
+     * ID của cửa hàng/chi nhánh tạo ra hợp đồng này.
+     * Dùng để phân biệt dữ liệu giữa các cửa hàng.
+     */
+    @Column(nullable = false, name = "store_id")
+    private Long storeId;
 }

@@ -45,12 +45,7 @@ public class Loan extends Auditable<String> {
     @Column(name = "loan_date")
     private LocalDate loanDate;
 
-    /**
-     * Mã hợp đồng (do hệ thống hoặc người dùng tự định nghĩa),
-     * dùng để tra cứu nhanh.
-     */
-    @Column(name = "contract_code")
-    private String contractCode;
+
 
     /**
      * Tổng số tiền cho vay (tiền gốc, đơn vị: VNĐ).

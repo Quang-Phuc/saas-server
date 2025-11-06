@@ -76,7 +76,6 @@ public class PledgeContractMapper {
 
         entity.setLoanDate(parseDate(dto.getLoanDate()));
         entity.setStoreId(storeId);
-        entity.setContractCode(dto.getContractCode());
         entity.setLoanAmount(dto.getLoanAmount());
         entity.setInterestTermValue(dto.getInterestTermValue());
 
@@ -107,7 +106,7 @@ public class PledgeContractMapper {
     }
 
 
-    public CollateralAsset toCollateralAssetEntity(CollateralDto dto) {
+    public CollateralAsset toCollateralAssetEntity(Long storeId,CollateralDto dto) {
         if (dto == null) return null;
 
         CollateralAsset entity = new CollateralAsset();
@@ -115,10 +114,10 @@ public class PledgeContractMapper {
         // ✅ Gán đầy đủ các trường theo JSON
         entity.setAssetName(dto.getAssetName());
         entity.setAssetType(dto.getAssetType());
-        entity.setAssetCode(dto.getAssetCode());
         entity.setValuation(dto.getValuation());
         entity.setWarehouseId(dto.getWarehouseId());
         entity.setAssetNote(dto.getAssetNote());
+        entity.setStoreId(storeId);
 
         // ✅ Trạng thái mặc định
         entity.setStatus("TrongKho");

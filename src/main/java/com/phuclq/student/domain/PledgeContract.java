@@ -53,10 +53,5 @@ public class PledgeContract extends Auditable<String> {
     @Column(name = "loan_id")
     private Long loanId;
 
-    /**
-     * Khóa ngoại (Foreign Key) liên kết đến ID của tài sản thế chấp.
-     * Dùng để JOIN qua bảng 'collateral_asset'.
-     */
-    @Column(name = "collateral_id")
-    private Long collateralId;
+
 }
