@@ -34,9 +34,6 @@ public class PledgeContractListResponse {
     /** Tên tài sản thế chấp (VD: Xe máy, ô tô, vàng...) */
     private final String assetName;
 
-    /** Loại tài sản thế chấp (VD: Xe, Vàng, ĐTDĐ...) */
-    private final String assetType;
-
     /** Số tiền vay ban đầu của hợp đồng */
     private final BigDecimal loanAmount;
 
@@ -52,24 +49,5 @@ public class PledgeContractListResponse {
     /** Nhân viên đang phụ trách hợp đồng này */
     private final String follower;
 
-    // Constructor
-    public PledgeContractListResponse(Long id, String contractCode, LocalDate loanDate, LocalDate dueDate,
-                                      String customerName, String phoneNumber, String assetName, String assetType,
-                                      BigDecimal loanAmount, BigDecimal totalPaid, BigDecimal remainingPrincipal,
-                                      LoanStatus status, String follower) {
-        this.id = id;
-        this.contractCode = contractCode;
-        this.assetType = assetType;
-        this.loanDate = loanDate;
-        this.dueDate = dueDate;
-        this.customerName = customerName;
-        this.phoneNumber = phoneNumber;
-        this.assetName = assetName;
-        this.loanAmount = loanAmount;
-        this.totalPaid = totalPaid;
-        this.remainingPrincipal = remainingPrincipal;
-        this.status = status;
-        this.follower = follower;
-    }
 
 }

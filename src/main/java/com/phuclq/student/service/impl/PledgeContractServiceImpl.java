@@ -10,7 +10,10 @@ import com.phuclq.student.service.FileUploadResult;
 import com.phuclq.student.service.PledgeContractService;
 import com.phuclq.student.service.S3StorageService;
 import com.phuclq.student.types.InterestPaymentType;
+import com.phuclq.student.types.LoanStatus;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -147,6 +150,11 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     @Override
     public PledgeContractDetailResponse getPledgeDetail(Long id) {
         return null;// pledgeRepository.findDetailById(id);
+    }
+
+    @Override
+    public Page<PledgeContractListResponse> searchContracts(String keyword, LoanStatus loanStatus, String status, LocalDate fromDate, LocalDate toDate, Long followerId, Pageable pageable) {
+        return null;
     }
 
     private void generatePaymentSchedule(Loan loan, Long contractId) {
