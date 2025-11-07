@@ -1,5 +1,6 @@
 package com.phuclq.student.controller; // (Thay đổi package cho đúng)
 
+import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.PledgeContract;
 import com.phuclq.student.dto.PledgeContractListResponse;
 import com.phuclq.student.dto.PledgeSearchRequest;
@@ -26,6 +27,7 @@ public class PledgeContractController {
 
     private final PledgeContractService pledgeContractService;
     private final PledgeRepository pledgeRepository;
+    private final RestEntityResponse restEntityRes;
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -53,7 +55,8 @@ public class PledgeContractController {
     }
 
     @PostMapping("/search")
-    public Page<PledgeContractListResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
-        return pledgeContractService.searchPledges(request);
+    public ResponseEntity<?> searchPledges(@RequestBody PledgeSearchRequest request) {
+        Page<PledgeContractListResponse> pledgeContractListResponses = pledgeContractService.searchPledges(request);
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(pledgeContractListResponses).getResponse();
     }
 }
