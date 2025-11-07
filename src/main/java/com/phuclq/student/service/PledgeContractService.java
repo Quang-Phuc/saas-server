@@ -35,6 +35,7 @@ public interface PledgeContractService {
     Page<PledgeContractListResponse> searchContracts(
             String keyword,
             LoanStatus loanStatus,
+            String pledgeStatus,
             String status,
             LocalDate fromDate,
             LocalDate toDate,

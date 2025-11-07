@@ -52,17 +52,17 @@ public class PledgeContractController {
         }
     }
 
-//    @PostMapping("/search")
-//    public Page<PledgeContractListResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
-//        Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
-//        return pledgeRepository.searchPledges(
-//                request.getKeyword(),
-//                request.getStatus(),
-//                request.getStoreId(),
-//                request.getAssetType(),
-//                request.getFromDate(),
-//                request.getToDate(),
-//                pageable
-//        );
-//    }
+    @PostMapping("/search")
+    public Page<PledgeContractListResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+        return pledgeRepository.searchPledges(
+                request.getKeyword(),
+                request.getStatus(),
+                request.getStoreId(),
+                request.getAssetType(),
+                request.getFromDate(),
+                request.getToDate(),
+                pageable
+        );
+    }
 }
