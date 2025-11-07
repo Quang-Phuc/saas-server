@@ -17,54 +17,80 @@ import java.util.Optional;
 @Repository
 public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 
-    @Query(value =
-            "SELECT " +
-                    "pc.id AS id, " +
-                    "pc.contract_code AS contractCode, " +
-                    "l.loan_date AS loanDate, " +
-                    "l.due_date AS dueDate, " +
-                    "c.full_name AS customerName, " +
-                    "c.phone_number AS phoneNumber, " +
-                    "GROUP_CONCAT(DISTINCT ca.asset_name SEPARATOR ', ') AS assetName, " +
-                    "l.loan_amount AS loanAmount, " +
-                    "IFNULL(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount + ps.interest_amount ELSE 0 END), 0) AS totalPaid, " +
-                    "(l.loan_amount - IFNULL(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) AS remainingPrincipal, " +
-                    "l.loan_status AS status, " +
-                    "pc.follower AS follower, " +
-                    "pc.pledge_status AS pledgeStatus " +
-                    "FROM pledge_contract pc " +
-                    "JOIN loan l ON pc.loan_id = l.id " +
-                    "JOIN customer c ON pc.customer_id = c.id " +
-                    "LEFT JOIN collateral_asset ca ON ca.contract_id = pc.id " +
-                    "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
-                    "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-                    "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
-                    "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
-                    "AND (:status IS NULL OR l.loan_status = :status) " +
-                    "AND (:storeId IS NULL OR pc.store_id = :storeId) " +
-                    "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
-                    "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
-                    "AND (:follower IS NULL OR pc.follower = :follower) " +
-                    "AND (:pledgeStatus IS NULL OR pc.pledge_status = :pledgeStatus) " +
-                    "GROUP BY pc.id, pc.contract_code, l.loan_date, l.due_date, c.full_name, c.phone_number, " +
-                    "l.loan_amount, l.loan_status, pc.follower, pc.pledge_status " +
-                    "ORDER BY l.loan_date DESC",
-            countQuery =
-                    "SELECT COUNT(DISTINCT pc.id) " +
-                            "FROM pledge_contract pc " +
-                            "JOIN loan l ON pc.loan_id = l.id " +
+    @Query(
+            value =
+                    "SELECT " +
+                            "pc.id AS id, " +
+                            "pc.contract_code AS contractCode, " +
+                            "l.loan_date AS loanDate, " +
+                            "l.due_date AS dueDate, " +
+                            "c.full_name AS customerName, " +
+                            "c.phone_number AS phoneNumber, " +
+                            "GROUP_CONCAT(DISTINCT ca.asset_name SEPARATOR ', ') AS assetName, " +
+                            "l.loan_amount AS loanAmount, " +
+                            "COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount + ps.interest_amount ELSE 0 END), 0) AS totalPaid, " +
+                            "(l.loan_amount - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) AS remainingPrincipal, " +
+                            "CASE " +
+                            "    WHEN l.status = 'CLOSED' THEN 'DA_DONG' " +
+                            "    WHEN l.due_date < CURDATE() " +
+                            "         AND (l.loan_amount - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) > 0 " +
+                            "         THEN 'QUA_HAN' " +
+                            "    WHEN (l.loan_amount - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) <= 0 " +
+                            "         THEN 'DA_TRA_HET' " +
+                            "    ELSE 'DANG_VAY' " +
+                            "END AS pledgeStatus, " +
+                            "l.follower_id AS follower " +
+                            "FROM pledge_contracts pc " +
+                            "JOIN loans l ON pc.loan_id = l.id " +
                             "JOIN customer c ON pc.customer_id = c.id " +
                             "LEFT JOIN collateral_asset ca ON ca.contract_id = pc.id " +
+                            "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
                             "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                             "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
                             "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
-                            "AND (:status IS NULL OR l.loan_status = :status) " +
+                            "AND (:pledgeStatus IS NULL OR " +
+                            "     CASE " +
+                            "         WHEN :pledgeStatus = 'DANG_VAY' THEN ( " +
+                            "             l.status <> 'CLOSED' " +
+                            "             AND (l.loan_amount - COALESCE((SELECT SUM(ps2.principal_amount) FROM payment_schedule ps2 WHERE ps2.contract_id = pc.id AND ps2.status = 'PAID'), 0)) > 0 " +
+                            "             AND l.due_date >= CURDATE() " +
+                            "         ) " +
+                            "         WHEN :pledgeStatus = 'QUA_HAN' THEN ( " +
+                            "             l.status <> 'CLOSED' " +
+                            "             AND l.due_date < CURDATE() " +
+                            "             AND (l.loan_amount - COALESCE((SELECT SUM(ps2.principal_amount) FROM payment_schedule ps2 WHERE ps2.contract_id = pc.id AND ps2.status = 'PAID'), 0)) > 0 " +
+                            "         ) " +
+                            "         WHEN :pledgeStatus = 'DA_TRA_HET' THEN ( " +
+                            "             (l.loan_amount - COALESCE((SELECT SUM(ps2.principal_amount) FROM payment_schedule ps2 WHERE ps2.contract_id = pc.id AND ps2.status = 'PAID'), 0)) <= 0 " +
+                            "         ) " +
+                            "         WHEN :pledgeStatus = 'DA_DONG' THEN (l.status = 'CLOSED') " +
+                            "         ELSE 1=1 " +
+                            "     END " +
+                            ") " +
+                            "AND (:status IS NULL OR l.status = :status) " +
                             "AND (:storeId IS NULL OR pc.store_id = :storeId) " +
                             "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
                             "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
-                            "AND (:follower IS NULL OR pc.follower = :follower) " +
-                            "AND (:pledgeStatus IS NULL OR pc.pledge_status = :pledgeStatus)",
-            nativeQuery = true)
+                            "AND (:follower IS NULL OR l.follower_id = :follower) " +
+                            "GROUP BY pc.id, pc.contract_code, l.loan_date, l.due_date, " +
+                            "c.full_name, c.phone_number, l.loan_amount, l.status, l.follower_id " +
+                            "ORDER BY l.loan_date DESC",
+            countQuery =
+                    "SELECT COUNT(DISTINCT pc.id) " +
+                            "FROM pledge_contracts pc " +
+                            "JOIN loans l ON pc.loan_id = l.id " +
+                            "JOIN customer c ON pc.customer_id = c.id " +
+                            "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
+                            "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                            "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
+                            "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
+                            "AND (:status IS NULL OR l.status = :status) " +
+                            "AND (:storeId IS NULL OR pc.store_id = :storeId) " +
+                            "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
+                            "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
+                            "AND (:follower IS NULL OR l.follower_id = :follower)",
+            nativeQuery = true
+    )
     Page<PledgeContractListResponse> searchPledges(
             @Param("keyword") String keyword,
             @Param("status") String status,
@@ -75,6 +101,8 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
             @Param("pledgeStatus") String pledgeStatus,
             Pageable pageable
     );
+
+
 
 
 
