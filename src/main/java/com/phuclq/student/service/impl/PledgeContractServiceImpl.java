@@ -13,6 +13,7 @@ import com.phuclq.student.types.InterestPaymentType;
 import com.phuclq.student.types.LoanStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -153,9 +154,30 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     }
 
     @Override
-    public Page<PledgeContractListResponse> searchContracts(String keyword, LoanStatus loanStatus, String status, LocalDate fromDate, LocalDate toDate, Long followerId, Pageable pageable) {
-        return null;
+    public Page<PledgeContractListResponse> searchPledges(PledgeSearchRequest request) {
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
+
+        LoanStatus loanStatus = null;
+        if (request.getLoanStatus() != null && !request.getLoanStatus().isEmpty()) {
+            try {
+                loanStatus = LoanStatus.valueOf(request.getLoanStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // ignore invalid value
+            }
+        }
+
+        return pledgeRepository.searchPledges(
+                request.getKeyword(),         // 🔹 Từ khóa tìm kiếm
+                request.getLoanStatus(),      // 🔹 Trạng thái khoản vay (LoanStatus)
+                request.getStoreId() != null ? Long.valueOf(request.getStoreId()) : null, // 🔹 Cửa hàng
+                request.getFromDate(),        // 🔹 Ngày bắt đầu
+                request.getToDate(),          // 🔹 Ngày kết thúc
+                request.getFollower(),        // 🔹 Người phụ trách
+                request.getPledgeStatus(),    // 🔹 Trạng thái hợp đồng (Đang vay, Quá hạn, Đóng, v.v.)
+                pageable                      // 🔹 Phân trang
+        );
     }
+
 
     private void generatePaymentSchedule(Loan loan, Long contractId) {
         // 👉 Số kỳ trả (ví dụ: trả góp 3 kỳ, 6 kỳ...)

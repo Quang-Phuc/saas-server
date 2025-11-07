@@ -1,53 +1,51 @@
 package com.phuclq.student.dto;
 
 import com.phuclq.student.types.LoanStatus;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * DTO dùng để hiển thị danh sách hợp đồng cầm đồ trong màn hình quản lý.
- * Bao gồm các thông tin cơ bản về khách hàng, tài sản, khoản vay và trạng thái hợp đồng.
+ * Giao diện projection dùng để hiển thị danh sách hợp đồng cầm đồ trong màn hình quản lý.
+ * Dữ liệu được map trực tiếp từ native query (alias trong SQL phải trùng với tên getter).
  */
-@Data
-public class PledgeContractListResponse {
+public interface PledgeContractListResponse {
 
     /** ID của hợp đồng cầm đồ */
-    private final Long id;
+    Long getId();
 
     /** Mã hợp đồng (ví dụ: CĐ252210-001) */
-    private final String contractCode;
+    String getContractCode();
 
     /** Ngày vay (ngày bắt đầu hợp đồng) */
-    private final LocalDate loanDate;
+    LocalDate getLoanDate();
 
-    /** Ngày đến hạn trả (ngày kết thúc hợp đồng hoặc hạn cuối trả nợ) */
-    private final LocalDate dueDate;
+    /** Ngày đến hạn trả (hạn cuối cùng khách hàng phải hoàn tất thanh toán) */
+    LocalDate getDueDate();
 
-    /** Tên khách hàng vay */
-    private final String customerName;
+    /** Tên khách hàng vay tiền */
+    String getCustomerName();
 
     /** Số điện thoại khách hàng vay */
-    private final String phoneNumber;
+    String getPhoneNumber();
 
-    /** Tên tài sản thế chấp (VD: Xe máy, ô tô, vàng...) */
-    private final String assetName;
+    /** Danh sách tên tài sản thế chấp (các asset được gộp bằng dấu phẩy) */
+    String getAssetName();
 
-    /** Số tiền vay ban đầu của hợp đồng */
-    private final BigDecimal loanAmount;
+    /** Số tiền vay ban đầu (gốc) */
+    BigDecimal getLoanAmount();
 
-    /** Tổng số tiền gốc + lãi mà khách hàng đã thanh toán */
-    private final BigDecimal totalPaid;
+    /** Tổng số tiền gốc mà khách hàng đã thanh toán (sum của principal_amount) */
+    BigDecimal getTotalPaid();
 
     /** Số tiền gốc còn lại chưa thanh toán */
-    private final BigDecimal remainingPrincipal;
+    BigDecimal getRemainingPrincipal();
 
-    /** Trạng thái khoản vay (VD: ACTIVE, CLOSED, OVERDUE...) */
-    private final LoanStatus status;
+    /** Trạng thái khoản vay: ACTIVE, CLOSED, OVERDUE... */
+    LoanStatus getStatus();
 
-    /** Nhân viên đang phụ trách hợp đồng này */
-    private final String follower;
+    /** Nhân viên hiện đang phụ trách hợp đồng này */
+    String getFollower();
 
-
+    /** Trạng thái hợp đồng cầm đồ (pledgeStatus): ví dụ Đang vay, Quá hạn, Đã đóng */
+    String getPledgeStatus();
 }

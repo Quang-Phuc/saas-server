@@ -17,43 +17,66 @@ import java.util.Optional;
 @Repository
 public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 
-//    @Query("SELECT new com.phuclq.student.dto.PledgeContractListResponse(" +
-//            "pc.id, " +
-//            "pc.contractCode, " +
-//            "l.loanDate, " +
-//            "l.dueDate, " +
-//            "c.fullName, " +
-//            "c.phoneNumber, " +
-//            "ca.assetCode, " +
-//            "l.loanAmount, " +
-//            "CONCAT(l.interestRateValue, ' ', l.interestRateUnit), " +
-//            "l.remainingPrincipal, " +
-//            "l.status, " +
-//            "pc.storeId" +
-//            ") " +
-//            "FROM PledgeContract pc " +
-//            "JOIN Loan l ON pc.loanId = l.id " +
-//            "JOIN Customer c ON pc.customerId = c.id " +
-//            "LEFT JOIN CollateralAsset ca ON pc.collateralId = ca.id " +
-//            "WHERE (:keyword IS NULL OR LOWER(c.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-//            "OR c.phoneNumber LIKE CONCAT('%', :keyword, '%') " +
-//            "OR l.contractCode LIKE CONCAT('%', :keyword, '%')) " +
-//            "AND (:status IS NULL OR l.status = :status) " +
-//            "AND (:storeId IS NULL OR pc.storeId = :storeId) " +
-//            "AND (:assetType IS NULL OR ca.assetCode = :assetType) " +
-//            "AND (:fromDate IS NULL OR l.loanDate >= :fromDate) " +
-//            "AND (:toDate IS NULL OR l.loanDate <= :toDate) " +
-//            "ORDER BY l.loanDate DESC"
-//    )
-//    Page<PledgeContractListResponse> searchPledges(
-//            @Param("keyword") String keyword,
-//            @Param("status") LoanStatus status,
-//            @Param("storeId") String storeId,
-//            @Param("assetType") String assetType,
-//            @Param("fromDate") LocalDate fromDate,
-//            @Param("toDate") LocalDate toDate,
-//            Pageable pageable
-//    );
+    @Query(value =
+            "SELECT " +
+                    "pc.id AS id, " +
+                    "pc.contract_code AS contractCode, " +
+                    "l.loan_date AS loanDate, " +
+                    "l.due_date AS dueDate, " +
+                    "c.full_name AS customerName, " +
+                    "c.phone_number AS phoneNumber, " +
+                    "GROUP_CONCAT(DISTINCT ca.asset_name SEPARATOR ', ') AS assetName, " +
+                    "l.loan_amount AS loanAmount, " +
+                    "IFNULL(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount + ps.interest_amount ELSE 0 END), 0) AS totalPaid, " +
+                    "(l.loan_amount - IFNULL(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) AS remainingPrincipal, " +
+                    "l.loan_status AS status, " +
+                    "pc.follower AS follower, " +
+                    "pc.pledge_status AS pledgeStatus " +
+                    "FROM pledge_contract pc " +
+                    "JOIN loan l ON pc.loan_id = l.id " +
+                    "JOIN customer c ON pc.customer_id = c.id " +
+                    "LEFT JOIN collateral_asset ca ON ca.contract_id = pc.id " +
+                    "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
+                    "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                    "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
+                    "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
+                    "AND (:status IS NULL OR l.loan_status = :status) " +
+                    "AND (:storeId IS NULL OR pc.store_id = :storeId) " +
+                    "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
+                    "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
+                    "AND (:follower IS NULL OR pc.follower = :follower) " +
+                    "AND (:pledgeStatus IS NULL OR pc.pledge_status = :pledgeStatus) " +
+                    "GROUP BY pc.id, pc.contract_code, l.loan_date, l.due_date, c.full_name, c.phone_number, " +
+                    "l.loan_amount, l.loan_status, pc.follower, pc.pledge_status " +
+                    "ORDER BY l.loan_date DESC",
+            countQuery =
+                    "SELECT COUNT(DISTINCT pc.id) " +
+                            "FROM pledge_contract pc " +
+                            "JOIN loan l ON pc.loan_id = l.id " +
+                            "JOIN customer c ON pc.customer_id = c.id " +
+                            "LEFT JOIN collateral_asset ca ON ca.contract_id = pc.id " +
+                            "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+                            "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
+                            "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
+                            "AND (:status IS NULL OR l.loan_status = :status) " +
+                            "AND (:storeId IS NULL OR pc.store_id = :storeId) " +
+                            "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
+                            "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
+                            "AND (:follower IS NULL OR pc.follower = :follower) " +
+                            "AND (:pledgeStatus IS NULL OR pc.pledge_status = :pledgeStatus)",
+            nativeQuery = true)
+    Page<PledgeContractListResponse> searchPledges(
+            @Param("keyword") String keyword,
+            @Param("status") String status,
+            @Param("storeId") Long storeId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            @Param("follower") String follower,
+            @Param("pledgeStatus") String pledgeStatus,
+            Pageable pageable
+    );
+
+
 
 //    @Query("SELECT new com.phuclq.student.dto.PledgeContractDetailResponse(" +
 //            "pc.id, " +
