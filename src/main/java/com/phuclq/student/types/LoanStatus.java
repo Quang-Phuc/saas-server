@@ -1,19 +1,18 @@
 package com.phuclq.student.types;
 
-
 /**
  * Định nghĩa tình trạng khoản vay (Loan Status).
  * Tương ứng với trường 'loanStatus' trong bảng 'loans'.
- * Giá trị DB: BINH_THUONG, NO_XAU, v.v.
+ * Giá trị DB: NORMAL, NORMAL_2, BAD_DEBT, v.v.
  */
 public enum LoanStatus {
 
-    BINH_THUONG("Bình thường", "Chưa vay"),
-    BINH_THUONG_2("Bình thường 2", "Đang vay"),
-    NO_XAU("Nợ xấu", "Nợ xấu"),
-    NO_RUI_RO("Nợ rủi ro", "Nợ rủi ro"),
-    NO_R2("Nợ R2", "Nợ R2"),
-    NO_R3("Nợ R3", "Nợ R3");
+    NORMAL("NORMAL", "Chưa vay"),
+    NORMAL_2("NORMAL_2", "Đang vay"),
+    RISKY("RISKY", "Nợ rủi ro"),
+    BAD_DEBT_R2("BAD_DEBT_R2", "Nợ R2"),
+    BAD_DEBT_R3("BAD_DEBT_R3", "Nợ R3"),
+    BAD_DEBT("BAD_DEBT", "Nợ xấu");
 
     private final String dbValue;
     private final String description;

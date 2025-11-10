@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -157,23 +158,27 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     public Page<PledgeContractListResponse> searchPledges(PledgeSearchRequest request) {
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
 
-        LoanStatus loanStatus = null;
-        if (request.getLoanStatus() != null && !request.getLoanStatus().isEmpty()) {
-            try {
-                loanStatus = LoanStatus.valueOf(request.getLoanStatus().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // ignore invalid value
-            }
+        LocalDateTime startDate = request.getFromDate();
+        LocalDateTime endDate = request.getToDate();
+
+        if (startDate != null) {
+            startDate = startDate.withHour(0).withMinute(0).withSecond(0).withNano(0);
         }
 
+        if (endDate != null) {
+            endDate = endDate.withHour(23).withMinute(59).withSecond(59).withNano(999_999_999);
+        }
+
+
+
         return pledgeRepository.searchPledges(
-                null,         // 🔹 Từ khóa tìm kiếm
-                null,      // 🔹 Trạng thái khoản vay (LoanStatus)
-                null, // 🔹 Cửa hàng
-                null,        // 🔹 Ngày bắt đầu
-                null,          // 🔹 Ngày kết thúc
-                null,        // 🔹 Người phụ trách
-                null,    // 🔹 Trạng thái hợp đồng (Đang vay, Quá hạn, Đóng, v.v.)
+                request.getKeyword(),         // 🔹 Từ khóa tìm kiếm
+                request.getLoanStatus(),      // 🔹 Trạng thái khoản vay (LoanStatus)
+                request.getStoreId(), // 🔹 Cửa hàng
+                startDate,        // 🔹 Ngày bắt đầu
+                endDate,          // 🔹 Ngày kết thúc
+                request.getFollower(),        // 🔹 Người phụ trách
+                request.getPledgeStatus(),    // 🔹 Trạng thái hợp đồng (Đang vay, Quá hạn, Đóng, v.v.)
                 pageable                      // 🔹 Phân trang
         );
     }
@@ -473,4 +478,72 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         String sequencePart = String.format("%03d", countToday + 1);
         return "PLEDGE-" + datePart + "-" + sequencePart;
     }
+    @Override
+    @Transactional
+    public PledgeContract updatePledge(Long id, String payloadJson, MultipartFile portraitFile, List<MultipartFile> attachmentFiles) {
+        try {
+            // 1️⃣ Parse payload
+            PledgeContractDto dto = objectMapper.readValue(payloadJson, PledgeContractDto.class);
+
+            // 2️⃣ Tìm hợp đồng cũ
+            PledgeContract existingContract = contractRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy hợp đồng ID: " + id));
+
+            // 3️⃣ Upload ảnh chân dung (nếu có)
+            String portraitUrl = null;//existingContract.getCustomer() != null ? existingContract.getCustomer().getIdUrl() : null;
+            if (portraitFile != null && !portraitFile.isEmpty()) {
+                // Ví dụ: portraitUrl = s3StorageService.uploadFileToS3(portraitFile, null, FILE_AVATAR.getName()).getUrl();
+                portraitUrl = "portraitUpload.getUrl()";
+            }
+
+            // 4️⃣ Cập nhật thông tin Customer
+            Customer updatedCustomer = findOrCreateCustomer(dto.getStoreId(), dto.getCustomer(), portraitUrl);
+            existingContract.setCustomerId(updatedCustomer.getId());
+
+            // 5️⃣ Cập nhật khoản vay
+            Loan updatedLoan = mapper.toLoanEntity(dto.getStoreId(), dto.getLoan());
+            updatedLoan.setId(existingContract.getLoanId());
+            loanRepository.save(updatedLoan);
+
+            // 6️⃣ Xóa và cập nhật lại danh sách tài sản thế chấp cũ
+            collateralRepository.deleteByContractId(id);
+
+            List<CollateralAsset> newCollaterals = new ArrayList<>();
+            if (dto.getCollateral() != null) {
+                for (CollateralDto colDto : dto.getCollateral()) {
+                    CollateralAsset asset = mapper.toCollateralAssetEntity(dto.getStoreId(), colDto);
+                    asset.setContractId(existingContract.getId());
+                    CollateralAsset saved = collateralRepository.save(asset);
+                    newCollaterals.add(saved);
+
+                    if (colDto.getAttributes() != null) {
+                        List<CollateralAttribute> attrs = colDto.getAttributes().stream()
+                                .map(attr -> mapper.toCollateralAttributeEntity(attr, saved.getId()))
+                                .collect(Collectors.toList());
+                        collateralAttributeRepository.saveAll(attrs);
+                    }
+                }
+            }
+
+            // 7️⃣ Cập nhật danh sách phí
+            feeDetailRepository.deleteByContractId(id);
+            saveFeeDetails(dto.getFees(), id);
+
+            // 8️⃣ Cập nhật lịch trả lãi (nếu cần tái sinh)
+            paymentScheduleRepository.deleteByContractId(id);
+            generatePaymentSchedule(updatedLoan, id);
+
+            // 9️⃣ Cập nhật các file đính kèm (nếu có)
+            // if (attachmentFiles != null) { ... }
+
+            // 🔟 Cập nhật lại entity
+            contractRepository.save(existingContract);
+
+            return existingContract;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi cập nhật hợp đồng: " + e.getMessage(), e);
+        }
+    }
+
 }

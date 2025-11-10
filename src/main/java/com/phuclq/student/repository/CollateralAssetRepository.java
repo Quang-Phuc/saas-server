@@ -11,4 +11,6 @@ import java.util.List;
 public interface CollateralAssetRepository extends JpaRepository<CollateralAsset, Long> {
 
   List<CollateralAsset> findByContractId(Long contractId);
+
+    void deleteByContractId(Long id);
 }

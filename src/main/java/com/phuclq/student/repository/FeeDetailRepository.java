@@ -12,4 +12,6 @@ import java.util.List;
 public interface FeeDetailRepository extends JpaRepository<FeeDetail, Long> {
 
     List<FeeDetail> findByContractId(Long contractId);
+
+    void deleteByContractId(Long id);
 }

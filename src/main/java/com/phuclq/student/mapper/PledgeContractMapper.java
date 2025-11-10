@@ -8,6 +8,7 @@ import com.phuclq.student.types.LoanStatus;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 @Component
 public class PledgeContractMapper {
@@ -98,7 +99,9 @@ public class PledgeContractMapper {
         }
 
         entity.setNote(dto.getNote());
+        if(Objects.nonNull(dto.getLoanStatus())){
         entity.setStatus(LoanStatus.valueOf(dto.getLoanStatus()));
+        }
         entity.setPartnerType(dto.getPartnerType());
         entity.setFollower(dto.getFollower());
         entity.setCustomerSource(dto.getCustomerSource());
@@ -179,7 +182,7 @@ public class PledgeContractMapper {
         dto.setPaymentCount(entity.getPaymentCount());
         dto.setInterestPaymentType(entity.getInterestPaymentType() != null ? entity.getInterestPaymentType().name() : null);
         dto.setNote(entity.getNote());
-        dto.setLoanStatus(entity.getLoanStatus());
+//        dto.setLoanStatus(entity.getLoanStatus());
         dto.setPartnerType(entity.getPartnerType());
         dto.setFollower(entity.getFollower());
         dto.setCustomerSource(entity.getCustomerSource());

@@ -20,6 +20,7 @@ public interface PledgeContractService {
             MultipartFile portraitFile,
             List<MultipartFile> attachmentFiles
     );
+    PledgeContract updatePledge(Long id, String payloadJson, MultipartFile portraitFile, List<MultipartFile> attachmentFiles);
 
     public PledgeContractDetailResponse getPledgeDetail(Long id) ;
 

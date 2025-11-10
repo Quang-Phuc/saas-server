@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -95,8 +96,8 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
             @Param("keyword") String keyword,
             @Param("status") String status,
             @Param("storeId") Long storeId,
-            @Param("fromDate") LocalDate fromDate,
-            @Param("toDate") LocalDate toDate,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
             @Param("follower") String follower,
             @Param("pledgeStatus") String pledgeStatus,
             Pageable pageable
