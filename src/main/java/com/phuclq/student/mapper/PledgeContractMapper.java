@@ -4,6 +4,7 @@ import com.phuclq.student.domain.*; // (Import các Entity)
 import com.phuclq.student.dto.*; // (Import các DTO)
 import com.phuclq.student.types.InterestPaymentType;
 import com.phuclq.student.types.InterestTermUnit;
+import com.phuclq.student.types.LoanStatus;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -97,7 +98,7 @@ public class PledgeContractMapper {
         }
 
         entity.setNote(dto.getNote());
-        entity.setLoanStatus(dto.getLoanStatus());
+        entity.setStatus(LoanStatus.valueOf(dto.getLoanStatus()));
         entity.setPartnerType(dto.getPartnerType());
         entity.setFollower(dto.getFollower());
         entity.setCustomerSource(dto.getCustomerSource());

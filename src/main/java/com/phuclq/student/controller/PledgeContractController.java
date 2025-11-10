@@ -62,8 +62,9 @@ public class PledgeContractController {
     }
 
     @PostMapping("/search")
-    public Page<PledgeContractListResponse> searchPledges(@RequestBody PledgeSearchRequest request) {
-        return pledgeContractService.searchPledges(request);
+    public ResponseEntity<?> searchPledges(@RequestBody PledgeSearchRequest request) {
+        Page<PledgeContractListResponse> pledgeContractListResponses = pledgeContractService.searchPledges(request);
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(pledgeContractListResponses).getResponse();
     }
 
     @GetMapping("/{id}")

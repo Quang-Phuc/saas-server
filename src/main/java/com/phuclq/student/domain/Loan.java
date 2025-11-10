@@ -100,12 +100,6 @@ public class Loan extends Auditable<String> {
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
-    /**
-     * Tình trạng của khoản vay (thông tin phụ).
-     * Ví dụ: "Binh Thuong", "No rui ro", "No xau".
-     */
-    @Column(name = "loan_status")
-    private String loanStatus;
 
     /**
      * Loại đối tác (thông tin phụ).
