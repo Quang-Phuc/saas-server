@@ -29,13 +29,13 @@ public class CustomerController {
 
     // ✅ Cập nhật khách hàng
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable Integer id, @RequestBody Customer customer) {
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer customer) {
         return ResponseEntity.ok(customerService.updateCustomer(id, customer));
     }
 
     // ✅ Xoá khách hàng
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
     }
@@ -48,7 +48,7 @@ public class CustomerController {
 
     // ✅ Lấy chi tiết khách hàng theo ID
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<Customer>> getCustomerById(@PathVariable Integer id) {
+    public ResponseEntity<Optional<Customer>> getCustomerById(@PathVariable Long id) {
         return ResponseEntity.ok(customerService.getCustomerById(id));
     }
 

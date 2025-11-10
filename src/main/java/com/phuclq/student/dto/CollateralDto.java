@@ -13,5 +13,11 @@ public class CollateralDto {
     private Long warehouseId;
     private String assetNote;
 
+    /** Trạng thái tài sản: "TrongKho", "ĐãTrả", "ThanhLý", ... */
+    private String status;
+
+    /** ID cửa hàng (store) liên quan */
+    private Long storeId;
+
     private List<AssetTypeResponse.AttributeDto> attributes;
 }

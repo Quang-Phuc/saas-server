@@ -21,7 +21,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Customer updateCustomer(Integer id, Customer customer) {
+    public Customer updateCustomer(Long id, Customer customer) {
         return customerRepository.findById(id).map(existing -> {
             existing.setFullName(customer.getFullName());
             existing.setPhoneNumber(customer.getPhoneNumber());
@@ -37,7 +37,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public void deleteCustomer(Integer id) {
+    public void deleteCustomer(Long id) {
         customerRepository.deleteById(id);
     }
 
@@ -47,7 +47,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public Optional<Customer> getCustomerById(Integer id) {
+    public Optional<Customer> getCustomerById(Long id) {
         return customerRepository.findById(id);
     }
 

@@ -2,6 +2,7 @@ package com.phuclq.student.service;
 
 import com.phuclq.student.domain.PledgeContract;
 import com.phuclq.student.dto.PledgeContractDetailResponse;
+import com.phuclq.student.dto.PledgeContractDto;
 import com.phuclq.student.dto.PledgeContractListResponse;
 import com.phuclq.student.dto.PledgeSearchRequest;
 import com.phuclq.student.types.LoanStatus;
@@ -23,4 +24,6 @@ public interface PledgeContractService {
     public PledgeContractDetailResponse getPledgeDetail(Long id) ;
 
     Page<PledgeContractListResponse> searchPledges(PledgeSearchRequest request);
+
+    PledgeContractDto getContractDetail(Long id);
 }

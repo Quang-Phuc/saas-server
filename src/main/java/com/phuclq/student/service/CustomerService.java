@@ -9,13 +9,13 @@ public interface CustomerService {
 
     Customer createCustomer(Customer customer);
 
-    Customer updateCustomer(Integer id, Customer customer);
+    Customer updateCustomer(Long id, Customer customer);
 
-    void deleteCustomer(Integer id);
+    void deleteCustomer(Long id);
 
     List<Customer> getAllCustomers();
 
-    Optional<Customer> getCustomerById(Integer id);
+    Optional<Customer> getCustomerById(Long id);
 
     Optional<Customer> findByPhoneOrIdentity(String phoneNumber, String identityNumber);
 }

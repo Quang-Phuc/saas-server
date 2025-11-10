@@ -167,16 +167,85 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         }
 
         return pledgeRepository.searchPledges(
-                request.getKeyword(),         // 🔹 Từ khóa tìm kiếm
-                request.getLoanStatus(),      // 🔹 Trạng thái khoản vay (LoanStatus)
-                request.getStoreId() != null ? Long.valueOf(request.getStoreId()) : null, // 🔹 Cửa hàng
-                request.getFromDate(),        // 🔹 Ngày bắt đầu
-                request.getToDate(),          // 🔹 Ngày kết thúc
-                request.getFollower(),        // 🔹 Người phụ trách
-                request.getPledgeStatus(),    // 🔹 Trạng thái hợp đồng (Đang vay, Quá hạn, Đóng, v.v.)
+                null,         // 🔹 Từ khóa tìm kiếm
+                null,      // 🔹 Trạng thái khoản vay (LoanStatus)
+                null, // 🔹 Cửa hàng
+                null,        // 🔹 Ngày bắt đầu
+                null,          // 🔹 Ngày kết thúc
+                null,        // 🔹 Người phụ trách
+                null,    // 🔹 Trạng thái hợp đồng (Đang vay, Quá hạn, Đóng, v.v.)
                 pageable                      // 🔹 Phân trang
         );
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PledgeContractDto getContractDetail(Long id) {
+        PledgeContract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy hợp đồng với id: " + id));
+
+        // Lấy Loan, Customer, Collateral, Fees, PaymentSchedule
+        Loan loan = loanRepository.findById(contract.getLoanId()).orElse(null);
+        Customer customer = customerRepository.findById(contract.getCustomerId()).orElse(null);
+        List<CollateralAsset> collaterals = collateralRepository.findByContractId(contract.getId());
+        List<FeeDetail> feeDetails = feeDetailRepository.findByContractId(contract.getId());
+        List<PaymentSchedule> schedules = paymentScheduleRepository.findByContractId(contract.getId());
+
+        // Map sang DTO
+        PledgeContractDto dto = new PledgeContractDto();
+        dto.setId(contract.getId());
+        dto.setContractCode(contract.getContractCode());
+        dto.setStoreId(contract.getStoreId());
+
+        // Map customer
+        if (customer != null) {
+            dto.setCustomer(mapper.toCustomerDto(customer));
+        }
+
+        // Map loan
+        if (loan != null) {
+            dto.setLoan(mapper.toLoanDto(loan));
+        }
+
+        // Map collaterals
+        List<CollateralDto> collateralDtos = collaterals.stream().map(asset -> {
+            CollateralDto colDto = mapper.toCollateralDto(asset);
+            List<CollateralAttribute> attrs = collateralAttributeRepository.findByCollateralAssetId(asset.getId());
+            colDto.setAttributes(attrs.stream()
+                    .map(mapper::toCollateralAttributeDto)
+                    .collect(Collectors.toList()));
+            return colDto;
+        }).collect(Collectors.toList());
+        dto.setCollateral(collateralDtos);
+
+        // Map fees
+        FeesDto feesDto = new FeesDto();
+        feeDetails.forEach(f -> {
+            switch (f.getFeeType()) {
+                case "warehouseFee":
+                    feesDto.setWarehouseFee(new FeeItemDto(f.getValueType(), f.getValue()));
+                    break;
+                case "storageFee":
+                    feesDto.setStorageFee(new FeeItemDto(f.getValueType(), f.getValue()));
+                    break;
+                case "riskFee":
+                    feesDto.setRiskFee(new FeeItemDto(f.getValueType(), f.getValue()));
+                    break;
+                case "managementFee":
+                    feesDto.setManagementFee(new FeeItemDto(f.getValueType(), f.getValue()));
+                    break;
+            }
+        });
+        dto.setFees(feesDto);
+
+        // Map payment schedules
+        dto.setPaymentSchedule(schedules.stream()
+                .map(mapper::toPaymentScheduleDto)
+                .collect(Collectors.toList()));
+
+        return dto;
+    }
+
 
 
     private void generatePaymentSchedule(Loan loan, Long contractId) {

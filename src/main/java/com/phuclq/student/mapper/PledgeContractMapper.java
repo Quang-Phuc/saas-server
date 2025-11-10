@@ -134,5 +134,89 @@ public class PledgeContractMapper {
         return entity;
     }
 
+    public CustomerDto toCustomerDto(Customer entity) {
+        if (entity == null) return null;
+        CustomerDto dto = new CustomerDto();
+        dto.setFullName(entity.getFullName());
+        dto.setDateOfBirth(entity.getDateOfBirth() != null ? entity.getDateOfBirth().toString() : null);
+        dto.setIdentityNumber(entity.getIdentityNumber());
+        dto.setPhoneNumber(entity.getPhoneNumber());
+        dto.setPermanentAddress(entity.getPermanentAddress());
+        dto.setIssueDate(entity.getIssueDate() != null ? entity.getIssueDate().toString() : null);
+        dto.setIssuePlace(entity.getIssuePlace());
+        dto.setOccupation(entity.getOccupation());
+        dto.setWorkplace(entity.getWorkplace());
+        dto.setHouseholdRegistration(entity.getHouseholdRegistration());
+        dto.setEmail(entity.getEmail());
+        dto.setIncomeVndPerMonth(entity.getIncomeVndPerMonth());
+        dto.setNote(entity.getNote());
+        dto.setContactPerson(entity.getContactPerson());
+        dto.setContactPhone(entity.getContactPhone());
+        dto.setSpouseName(entity.getSpouseName());
+        dto.setSpousePhone(entity.getSpousePhone());
+        dto.setSpouseOccupation(entity.getSpouseOccupation());
+        dto.setFatherName(entity.getFatherName());
+        dto.setFatherPhone(entity.getFatherPhone());
+        dto.setFatherOccupation(entity.getFatherOccupation());
+        dto.setMotherName(entity.getMotherName());
+        dto.setMotherPhone(entity.getMotherPhone());
+        dto.setMotherOccupation(entity.getMotherOccupation());
+        dto.setCustomerCode(entity.getCustomerCode());
+        dto.setIdUrl(entity.getIdUrl());
+        return dto;
+    }
+
+    public LoanDto toLoanDto(Loan entity) {
+        if (entity == null) return null;
+        LoanDto dto = new LoanDto();
+        dto.setLoanDate(entity.getLoanDate() != null ? entity.getLoanDate().toString() : null);
+        dto.setLoanAmount(entity.getLoanAmount());
+        dto.setInterestTermValue(entity.getInterestTermValue());
+        dto.setInterestTermUnit(entity.getInterestTermUnit() != null ? entity.getInterestTermUnit().name() : null);
+        dto.setInterestRateValue(entity.getInterestRateValue());
+        dto.setInterestRateUnit(entity.getInterestRateUnit());
+        dto.setPaymentCount(entity.getPaymentCount());
+        dto.setInterestPaymentType(entity.getInterestPaymentType() != null ? entity.getInterestPaymentType().name() : null);
+        dto.setNote(entity.getNote());
+        dto.setLoanStatus(entity.getLoanStatus());
+        dto.setPartnerType(entity.getPartnerType());
+        dto.setFollower(entity.getFollower());
+        dto.setCustomerSource(entity.getCustomerSource());
+        return dto;
+    }
+
+    public CollateralDto toCollateralDto(CollateralAsset entity) {
+        if (entity == null) return null;
+        CollateralDto dto = new CollateralDto();
+        dto.setAssetName(entity.getAssetName());
+        dto.setAssetType(entity.getAssetType());
+        dto.setValuation(entity.getValuation());
+        dto.setWarehouseId(entity.getWarehouseId());
+        dto.setAssetNote(entity.getAssetNote());
+        dto.setStatus(entity.getStatus());
+        dto.setStoreId(entity.getStoreId());
+        return dto;
+    }
+
+    public AssetTypeResponse.AttributeDto toCollateralAttributeDto(CollateralAttribute entity) {
+        if (entity == null) return null;
+        AssetTypeResponse.AttributeDto dto = new AssetTypeResponse.AttributeDto();
+        dto.setLabel(entity.getLabel());
+        dto.setValue(entity.getValue());
+        return dto;
+    }
+
+    public PaymentScheduleDto toPaymentScheduleDto(PaymentSchedule entity) {
+        if (entity == null) return null;
+        PaymentScheduleDto dto = new PaymentScheduleDto();
+        dto.setPeriodNumber(entity.getPeriodNumber());
+        dto.setDueDate(entity.getDueDate() != null ? entity.getDueDate().toString() : null);
+        dto.setInterestAmount(entity.getInterestAmount());
+        dto.setPrincipalAmount(entity.getPrincipalAmount());
+        dto.setTotalAmount(entity.getTotalAmount());
+        dto.setStatus(entity.getStatus());
+        return dto;
+    }
+
 
 }
