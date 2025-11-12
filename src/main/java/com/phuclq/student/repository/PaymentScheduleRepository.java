@@ -1,5 +1,7 @@
 package com.phuclq.student.repository;
 import com.phuclq.student.domain.PaymentSchedule;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +12,8 @@ public interface PaymentScheduleRepository extends JpaRepository<PaymentSchedule
 
     // Lấy tất cả lịch trả theo hợp đồng
     List<PaymentSchedule> findByContractId(Long contractId);
+
+    Page<PaymentSchedule> findByContractId(Long contractId, Pageable pageable);
 
     // Lấy lịch trả theo trạng thái (ví dụ: PENDING, PAID)
     List<PaymentSchedule> findByContractIdAndStatus(Long contractId, String status);

@@ -94,7 +94,7 @@ public class UserServiceImpl implements UserService {
         owner.setPhone(request.getPhone());
         owner.setPassword(hashedPassword);
         owner.setIsDeleted(false);
-        owner.setIsEnable(false);
+        owner.setIsEnable(true);
         owner.setUserName(request.getPhone());
         owner.setRoleId(RoleConstant.OWNER); // 1 = Chủ tiệm
         User user = userRepository.save(owner);
