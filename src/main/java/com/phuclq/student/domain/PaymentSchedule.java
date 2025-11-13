@@ -46,13 +46,6 @@ public class PaymentSchedule extends Auditable<String> {
     @Column(name = "status")
     private String status;
 
-    /** Số tiền khách đã thanh toán (nếu có) */
-    @Column(name = "paid_amount")
-    private BigDecimal paidAmount;
-
-    /** Ngày thực tế khách thanh toán (nếu có) */
-    @Column(name = "paid_date")
-    private LocalDate paidDate;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_schedule_id", insertable = false, updatable = false)
