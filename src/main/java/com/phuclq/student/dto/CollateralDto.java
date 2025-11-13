@@ -12,6 +12,7 @@ public class CollateralDto {
     private BigDecimal valuation;
     private Long warehouseId;
     private String assetNote;
+    private BigDecimal warehouseDailyFee;
 
     /** Trạng thái tài sản: "TrongKho", "ĐãTrả", "ThanhLý", ... */
     private String status;

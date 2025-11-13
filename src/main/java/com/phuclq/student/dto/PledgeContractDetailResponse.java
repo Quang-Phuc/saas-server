@@ -80,6 +80,7 @@ public class PledgeContractDetailResponse {
     private Long warehouseId;
     private String assetCode;
     private String assetNote;
+    private BigDecimal warehouseDailyFee;
 
     // feeDetails (flattened)
     private BigDecimal warehouseValue;
@@ -90,121 +91,6 @@ public class PledgeContractDetailResponse {
     private String riskType;
     private BigDecimal managementValue;
     private String managementType;
-
-    public PledgeContractDetailResponse(
-            Long id,
-            String fullName,
-            String phoneNumber,
-            LocalDate dateOfBirth,
-            String identityNumber,
-            LocalDate issueDate,
-            String issuePlace,
-            String permanentAddress,
-            String portraitUrl,
-            String customerCode,
-            String occupation,
-            String workplace,
-            String householdRegistration,
-            String email,
-            Long incomeVndPerMonth,
-            String contactPerson,
-            String contactPhone,
-            String note,
-            String spouseName,
-            String spousePhone,
-            String spouseOccupation,
-            String fatherName,
-            String fatherPhone,
-            String fatherOccupation,
-            String motherName,
-            String motherPhone,
-            String motherOccupation,
-            String assetName,
-            String assetType,
-            LocalDate loanDate,
-            BigDecimal loanAmount,
-            Integer interestTermValue,
-            InterestTermUnit interestTermUnit,
-            BigDecimal interestRateValue,
-            String interestRateUnit,
-            String interestPaymentType,
-            Integer paymentCount,
-            String loanNote,
-            String loanStatus,
-            String partnerType,
-            String follower,
-            String customerSource,
-            Long valuation,
-            String licensePlate,
-            String chassisNumber,
-            String engineNumber,
-            Long warehouseId,
-            String assetCode,
-            String assetNote,
-            BigDecimal warehouseValue,
-            String warehouseType,
-            BigDecimal storageValue,
-            String storageType,
-            BigDecimal riskValue,
-            String riskType,
-            BigDecimal managementValue,
-            String managementType
-    ) {
-        this.id = id;
-        this.fullName = fullName;
-        this.phoneNumber = phoneNumber;
-        this.dateOfBirth = dateOfBirth;
-        this.identityNumber = identityNumber;
-        this.issueDate = issueDate;
-        this.issuePlace = issuePlace;
-        this.permanentAddress = permanentAddress;
-        this.portraitUrl = portraitUrl;
-        this.customerCode = customerCode;
-        this.occupation = occupation;
-        this.workplace = workplace;
-        this.householdRegistration = householdRegistration;
-        this.email = email;
-        this.incomeVndPerMonth = incomeVndPerMonth;
-        this.contactPerson = contactPerson;
-        this.contactPhone = contactPhone;
-        this.note = note;
-        this.spouseName = spouseName;
-        this.spousePhone = spousePhone;
-        this.spouseOccupation = spouseOccupation;
-        this.fatherName = fatherName;
-        this.fatherPhone = fatherPhone;
-        this.fatherOccupation = fatherOccupation;
-        this.motherName = motherName;
-        this.motherPhone = motherPhone;
-        this.motherOccupation = motherOccupation;
-        this.assetName = assetName;
-        this.assetType = assetType;
-        this.loanDate = loanDate;
-        this.loanAmount = loanAmount;
-        this.interestTermValue = interestTermValue;
-        this.interestTermUnit = interestTermUnit;
-        this.interestRateValue = interestRateValue;
-        this.interestRateUnit = interestRateUnit;
-        this.interestPaymentType = interestPaymentType;
-        this.paymentCount = paymentCount;
-        this.loanNote = loanNote;
-        this.loanStatus = loanStatus;
-        this.partnerType = partnerType;
-        this.follower = follower;
-        this.customerSource = customerSource;
-        this.valuation = valuation;
-        this.licensePlate = licensePlate;
-        this.chassisNumber = chassisNumber;
-        this.engineNumber = engineNumber;
-        this.warehouseId = warehouseId;
-        this.assetCode = assetCode;
-        this.assetNote = assetNote;
-
-        this.warehouseFee = new FeeDetail(toDouble(warehouseValue), warehouseType);
-        this.storageFee = new FeeDetail(toDouble(storageValue), storageType);
-        this.riskFee = new FeeDetail(toDouble(riskValue), riskType);
-        this.managementFee = new FeeDetail(toDouble(managementValue), managementType);
-    }
 
     private Double toDouble(BigDecimal value) {
         return value != null ? value.doubleValue() : null;

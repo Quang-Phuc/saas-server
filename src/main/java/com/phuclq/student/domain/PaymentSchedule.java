@@ -46,6 +46,10 @@ public class PaymentSchedule extends Auditable<String> {
     @Column(name = "status")
     private String status;
 
+    /** Phí kho trong kỳ */
+    @Column(name = "warehouse_daily_fee")
+    private BigDecimal warehouseDailyFee;
+
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_schedule_id", insertable = false, updatable = false)

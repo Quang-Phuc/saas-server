@@ -74,4 +74,11 @@ public class CollateralAsset extends Auditable<String> {
      */
     @Column(nullable = false, name = "store_id")
     private Long storeId;
+
+    /**
+     * Phí kho / ngày
+     */
+    @Column(name = "warehouse_daily_fee")
+    private BigDecimal warehouseDailyFee;
+
 }

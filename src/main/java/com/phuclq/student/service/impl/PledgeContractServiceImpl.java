@@ -80,15 +80,19 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             // 5️⃣ Lưu danh sách tài sản thế chấp
             List<CollateralAsset> savedCollaterals = new ArrayList<>();
 
-            if (dto.getCollateral() != null && !dto.getCollateral().isEmpty()) {
+            if (dto.getCollateral() != null) {
                 for (CollateralDto colDto : dto.getCollateral()) {
-                    // Lưu asset trước
-                    CollateralAsset entity = mapper.toCollateralAssetEntity(storeId,colDto);
+
+                    CollateralAsset entity = mapper.toCollateralAssetEntity(storeId, colDto);
+
+                    // ⭐ NEW: bổ sung lưu warehouseDailyFee
+                    entity.setWarehouseDailyFee(colDto.getWarehouseDailyFee());
+
                     CollateralAsset saved = collateralRepository.save(entity);
                     savedCollaterals.add(saved);
 
-                    // Sau khi lưu asset thì lưu các attributes đi kèm
-                    if (colDto.getAttributes() != null && !colDto.getAttributes().isEmpty()) {
+                    // Attributes
+                    if (colDto.getAttributes() != null) {
                         List<CollateralAttribute> attributes = colDto.getAttributes().stream()
                                 .map(attr -> mapper.toCollateralAttributeEntity(attr, saved.getId()))
                                 .collect(Collectors.toList());
@@ -239,6 +243,9 @@ public class PledgeContractServiceImpl implements PledgeContractService {
                 case "managementFee":
                     feesDto.setManagementFee(new FeeItemDto(f.getValueType(), f.getValue()));
                     break;
+                case "appraisalFee":
+                    feesDto.setAppraisalFee(new FeeItemDto(f.getValueType(), f.getValue()));
+                    break;
             }
         });
         dto.setFees(feesDto);
@@ -252,62 +259,88 @@ public class PledgeContractServiceImpl implements PledgeContractService {
     }
 
 
+    private int calculateDaysOfPeriod( int termValue, String termUnit) {
+        switch (termUnit.toUpperCase()) {
+            case "DAY":
+                return termValue;
+            case "WEEK":
+                return termValue * 7;
+            case "MONTH":
+            case "PERIODIC_MONTH":
+                return termValue * 30;
+            default:
+                return termValue;
+        }
+    }
 
     private void generatePaymentSchedule(Loan loan, Long contractId) {
-        // 👉 Số kỳ trả (ví dụ: trả góp 3 kỳ, 6 kỳ...)
+
         int count = loan.getPaymentCount() != null ? loan.getPaymentCount() : 1;
-
-        // 👉 Số tiền vay gốc
         BigDecimal principal = loan.getLoanAmount();
-
-        // 👉 Ngày bắt đầu tính (ngày giải ngân / ngày vay)
         LocalDate startDate = loan.getLoanDate();
 
-        // 👉 Giá trị 1 kỳ (ví dụ 1 ngày, 1 tuần, 1 tháng,...)
         int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 1;
+        String termUnit = loan.getInterestTermUnit() != null ? loan.getInterestTermUnit().name() : "DAY";
 
-        // 👉 Đơn vị kỳ hạn (Ngày / Tuần / Tháng / Tháng định kỳ)
-        String termUnit = loan.getInterestTermUnit() != null ? loan.getInterestTermUnit().name(): "DAY";
-
-        // 👉 Tiền lãi phải trả cho mỗi kỳ
+        // Lãi kỳ
         BigDecimal interestPerPeriod = calculateInterestPerPeriod(loan);
 
-        // 👉 Vòng lặp tạo từng kỳ trả (1 → count)
+        // ⭐ NEW: Lấy danh sách tài sản cầm cố của hợp đồng
+        List<CollateralAsset> assets = collateralRepository.findByContractId(contractId);
+
         for (int i = 1; i <= count; i++) {
 
-            // 👉 Xác định ngày đến hạn theo đơn vị kỳ hạn
             LocalDate dueDate = calculateDueDate(startDate, termValue, termUnit, i);
 
-            // 👉 Tiền gốc phải trả trong kỳ này
-            BigDecimal principalAmount = BigDecimal.ZERO;
+            // ⭐ NEW: số ngày trong kỳ
+            int daysOfPeriod = calculateDaysOfPeriod(termValue, termUnit);
 
-            // 👉 Nếu loại trả là "trả góp từng kỳ"
-            if ("INSTALLMENT".equalsIgnoreCase(loan.getInterestPaymentType().name())) {
-                principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
+            // ⭐ NEW: Tính phí kho của tất cả tài sản
+            BigDecimal warehouseFeePerPeriod = BigDecimal.ZERO;
+
+            for (CollateralAsset asset : assets) {
+
+                BigDecimal dailyFee = asset.getWarehouseDailyFee() != null
+                        ? asset.getWarehouseDailyFee()
+                        : BigDecimal.ZERO;
+
+                BigDecimal feeOfAsset = dailyFee.multiply(BigDecimal.valueOf(daysOfPeriod));
+
+                warehouseFeePerPeriod = warehouseFeePerPeriod.add(feeOfAsset);
             }
-            // 👉 Nếu loại trả là "trả gốc cuối kỳ"
-            else if ("LUMP_SUM_END".equalsIgnoreCase(loan.getInterestPaymentType().name()) && i == count) {
+
+            // ⭐ Tiền gốc trong kỳ
+            BigDecimal principalAmount = BigDecimal.ZERO;
+            if (InterestPaymentType.INSTALLMENT.name().equalsIgnoreCase(loan.getInterestPaymentType().name())) {
+                principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
+            } else if (InterestPaymentType.PERIODIC_INTEREST.name().equalsIgnoreCase(loan.getInterestPaymentType().name()) && i == count) {
                 principalAmount = principal;
             }
 
-            // 👉 Tổng tiền phải trả kỳ này = gốc + lãi
-            BigDecimal totalAmount = interestPerPeriod.add(principalAmount);
+            // ⭐ Tổng tiền kỳ = gốc + lãi + phí kho (tất cả tài sản)
+            BigDecimal totalAmount = interestPerPeriod
+                    .add(principalAmount)
+                    .add(warehouseFeePerPeriod);
 
-            // 👉 Tạo đối tượng PaymentSchedule (1 dòng = 1 kỳ trả)
+            // ⭐ Tạo và lưu kỳ
             PaymentSchedule schedule = PaymentSchedule.builder()
                     .contractId(contractId)
                     .periodNumber(i)
                     .dueDate(dueDate)
                     .interestAmount(interestPerPeriod)
                     .principalAmount(principalAmount)
+
+                    // ⭐ NEW: lưu warehouseDailyFee = tổng phí kho/ngày của tất cả tài sản
+                    .warehouseDailyFee(warehouseFeePerPeriod)
+
                     .totalAmount(totalAmount)
                     .status("PENDING")
                     .build();
 
-            // 👉 Lưu vào DB
             paymentScheduleRepository.save(schedule);
         }
     }
+
     /**
      * Tính ngày đến hạn cho từng kỳ, dựa vào đơn vị kỳ hạn.
      */

@@ -121,6 +121,7 @@ public class PledgeContractMapper {
         entity.setValuation(dto.getValuation());
         entity.setWarehouseId(dto.getWarehouseId());
         entity.setAssetNote(dto.getAssetNote());
+        entity.setWarehouseDailyFee(dto.getWarehouseDailyFee());
         entity.setStoreId(storeId);
 
         // ✅ Trạng thái mặc định
@@ -199,6 +200,7 @@ public class PledgeContractMapper {
         dto.setAssetNote(entity.getAssetNote());
         dto.setStatus(entity.getStatus());
         dto.setStoreId(entity.getStoreId());
+        dto.setWarehouseDailyFee(entity.getWarehouseDailyFee());
         return dto;
     }
 

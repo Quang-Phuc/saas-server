@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PaymentScheduleRepository extends JpaRepository<PaymentSchedule, Long> {
@@ -20,4 +21,8 @@ public interface PaymentScheduleRepository extends JpaRepository<PaymentSchedule
 
     // Xóa tất cả lịch trả của 1 hợp đồng (nếu cần update lại)
     void deleteByContractId(Long contractId);
+
+    List<PaymentSchedule> findByContractIdOrderByPeriodNumberAsc(Long contractId);
+
+    Optional<PaymentSchedule> findByContractIdAndPeriodNumber(Long contractId, Integer periodNumber);
 }

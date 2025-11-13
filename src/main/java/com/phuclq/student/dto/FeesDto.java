@@ -8,4 +8,5 @@ public class FeesDto {
     private FeeItemDto storageFee;
     private FeeItemDto riskFee;
     private FeeItemDto managementFee;
+    private FeeItemDto appraisalFee;
 }

@@ -37,5 +37,9 @@ public class PaymentScheduleTransaction extends Auditable<String> {
     @Column(name = "note")
     private String note;
 
+    /** Hình thức thanh toán */
+    @Column(name = "payment_method")
+    private String paymentMethod;   // cash / bank_transfer ...
+
 
 }
