@@ -4,6 +4,7 @@ import lombok.*;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "payment_schedule")
@@ -52,4 +53,9 @@ public class PaymentSchedule extends Auditable<String> {
     /** Ngày thực tế khách thanh toán (nếu có) */
     @Column(name = "paid_date")
     private LocalDate paidDate;
+
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_schedule_id", insertable = false, updatable = false)
+    private List<PaymentScheduleTransaction> transactions;
+
 }
