@@ -10,6 +10,8 @@ import com.phuclq.student.service.FileUploadResult;
 import com.phuclq.student.service.PledgeContractService;
 import com.phuclq.student.service.S3StorageService;
 import com.phuclq.student.types.InterestPaymentType;
+import com.phuclq.student.types.InterestRateUnit;
+import com.phuclq.student.types.InterestTermUnit;
 import com.phuclq.student.types.LoanStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +26,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +34,8 @@ import java.util.stream.Collectors;
 
 import static com.phuclq.student.types.FileType.FILE_AVATAR;
 import static com.phuclq.student.types.FileType.PLEDGE_CONTRACT_FILE;
+import static com.phuclq.student.types.InterestRateUnit.INTEREST_PER_DAY;
+import static com.phuclq.student.types.PaymentType.PAYMENT_PROCESSING;
 
 @Service
 @AllArgsConstructor
@@ -120,7 +125,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             }
 
             // 8️⃣ Sinh lịch trả lãi (PaymentSchedule)
-            generatePaymentSchedule(savedLoan, savedContract.getId());
+            generatePaymentSchedule(savedLoan,  savedCollaterals);
 
             // 9️⃣ Lưu thông tin các loại phí
             saveFeeDetails(dto.getFees(), savedContract.getId());
@@ -151,7 +156,152 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             throw new RuntimeException("Lỗi khi tạo hợp đồng: " + e.getMessage(), e);
         }
     }
+    private BigDecimal calculateWarehouseFeeForPeriod(List<CollateralAsset> assets,
+                                                      LocalDate startDate,
+                                                      LocalDate endDate) {
+        if (assets == null || assets.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
 
+        long days = ChronoUnit.DAYS.between(startDate, endDate);
+        if (days <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal totalDailyFee = assets.stream()
+                .map(a -> a.getWarehouseDailyFee() != null ? a.getWarehouseDailyFee() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return totalDailyFee
+                .multiply(BigDecimal.valueOf(days))
+                .setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculatePrincipalForPeriod(Loan loan,
+                                                   int periodIndex,
+                                                   int totalPeriods) {
+        if (loan.getLoanAmount() == null) return BigDecimal.ZERO;
+
+        BigDecimal principal = loan.getLoanAmount();
+        InterestPaymentType type = loan.getInterestPaymentType(); // INSTALLMENT, PERIODIC_INTEREST, LUMP_SUM_END
+
+        if (type == null) {
+            type = InterestPaymentType.PERIODIC_INTEREST; // mặc định: gốc trả cuối kỳ
+        }
+
+        switch (type) {
+            case INSTALLMENT:
+                // chia đều + dồn phần dư vào kỳ cuối
+                BigDecimal base = principal
+                        .divide(BigDecimal.valueOf(totalPeriods), 0, RoundingMode.DOWN);
+                BigDecimal remainder = principal.subtract(
+                        base.multiply(BigDecimal.valueOf(totalPeriods))
+                );
+
+                if (periodIndex == totalPeriods) {
+                    return base.add(remainder);
+                } else {
+                    return base;
+                }
+
+            case PERIODIC_INTEREST:
+            case LUMP_SUM_END:
+            default:
+                // Gốc trả cuối kỳ
+                return (periodIndex == totalPeriods) ? principal : BigDecimal.ZERO;
+        }
+    }
+
+    private LocalDate addTerm(LocalDate baseDate,
+                              Integer termValue,
+                              InterestTermUnit termUnit,
+                              int periodIndex) {
+        if (baseDate == null) {
+            throw new IllegalArgumentException("loanDate cannot be null");
+        }
+
+        int value = (termValue != null ? termValue : 1) * periodIndex;
+        InterestTermUnit unit = termUnit != null ? termUnit : InterestTermUnit.MONTH;
+
+        switch (unit) {
+            case DAY:
+                return baseDate.plusDays(value);
+            case WEEK:
+                return baseDate.plusWeeks(value);
+            case MONTH:
+            case PERIODIC_MONTH:
+                return baseDate.plusMonths(value);
+//            case YEAR:
+//                return baseDate.plusYears(value);
+            default:
+                return baseDate.plusDays(value);
+        }
+    }
+
+    private BigDecimal calculateInterestForPeriod(Loan loan,
+                                                  LocalDate startDate,
+                                                  LocalDate endDate) {
+        if (loan == null || loan.getLoanAmount() == null || loan.getInterestRateValue() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        long days = ChronoUnit.DAYS.between(startDate, endDate);
+        if (days <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal rate = loan.getInterestRateValue();   // giá trị lãi
+        BigDecimal amount = loan.getLoanAmount();        // số tiền vay
+
+        // Enum của ông: INTEREST_PER_MILLION_PER_DAY, INTEREST_PERCENT_PER_MONTH, INTEREST_PER_DAY
+        InterestRateUnit unit = loan.getInterestRateUnit();
+        if (unit == null) {
+            // fallback: cứ coi là Lãi/Triệu/Ngày
+            unit = LoanInterestRateUnit.INTEREST_PER_MILLION_PER_DAY;
+        }
+
+        switch (unit) {
+
+            case INTEREST_PER_MILLION_PER_DAY:
+                // rate = VNĐ / triệu / ngày
+                // interest = rate * (amount / 1_000_000) * days
+                BigDecimal principalInMillions = amount
+                        .divide(BigDecimal.valueOf(1_000_000), 10, RoundingMode.HALF_UP);
+
+                return rate
+                        .multiply(principalInMillions)
+                        .multiply(BigDecimal.valueOf(days))
+                        .setScale(0, RoundingMode.HALF_UP);
+
+            case INTEREST_PERCENT_PER_MONTH:
+                // rate = % / tháng
+                // interest = amount × (rate/100) × (days / 30)
+                BigDecimal monthlyRate = rate
+                        .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+
+                BigDecimal daysRatio = BigDecimal.valueOf(days)
+                        .divide(BigDecimal.valueOf(30), 10, RoundingMode.HALF_UP);
+
+                return amount
+                        .multiply(monthlyRate)
+                        .multiply(daysRatio)
+                        .setScale(0, RoundingMode.HALF_UP);
+
+            case INTEREST_PER_DAY:
+                // rate = % / ngày
+                // interest = amount × (rate/100) × days
+                BigDecimal dailyRate = rate
+                        .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+
+                return amount
+                        .multiply(dailyRate)
+                        .multiply(BigDecimal.valueOf(days))
+                        .setScale(0, RoundingMode.HALF_UP);
+
+            default:
+                return BigDecimal.ZERO;
+        }
+    }
 
     @Override
     public PledgeContractDetailResponse getPledgeDetail(Long id) {
@@ -273,73 +423,76 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         }
     }
 
-    private void generatePaymentSchedule(Loan loan, Long contractId) {
-
-        int count = loan.getPaymentCount() != null ? loan.getPaymentCount() : 1;
-        BigDecimal principal = loan.getLoanAmount();
-        LocalDate startDate = loan.getLoanDate();
-
-        int termValue = loan.getInterestTermValue() != null ? loan.getInterestTermValue() : 1;
-        String termUnit = loan.getInterestTermUnit() != null ? loan.getInterestTermUnit().name() : "DAY";
-
-        // Lãi kỳ
-        BigDecimal interestPerPeriod = calculateInterestPerPeriod(loan);
-
-        // ⭐ NEW: Lấy danh sách tài sản cầm cố của hợp đồng
-        List<CollateralAsset> assets = collateralRepository.findByContractId(contractId);
-
-        for (int i = 1; i <= count; i++) {
-
-            LocalDate dueDate = calculateDueDate(startDate, termValue, termUnit, i);
-
-            // ⭐ NEW: số ngày trong kỳ
-            int daysOfPeriod = calculateDaysOfPeriod(termValue, termUnit);
-
-            // ⭐ NEW: Tính phí kho của tất cả tài sản
-            BigDecimal warehouseFeePerPeriod = BigDecimal.ZERO;
-
-            for (CollateralAsset asset : assets) {
-
-                BigDecimal dailyFee = asset.getWarehouseDailyFee() != null
-                        ? asset.getWarehouseDailyFee()
-                        : BigDecimal.ZERO;
-
-                BigDecimal feeOfAsset = dailyFee.multiply(BigDecimal.valueOf(daysOfPeriod));
-
-                warehouseFeePerPeriod = warehouseFeePerPeriod.add(feeOfAsset);
-            }
-
-            // ⭐ Tiền gốc trong kỳ
-            BigDecimal principalAmount = BigDecimal.ZERO;
-            if (InterestPaymentType.INSTALLMENT.name().equalsIgnoreCase(loan.getInterestPaymentType().name())) {
-                principalAmount = principal.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
-            } else if (InterestPaymentType.PERIODIC_INTEREST.name().equalsIgnoreCase(loan.getInterestPaymentType().name()) && i == count) {
-                principalAmount = principal;
-            }
-
-            // ⭐ Tổng tiền kỳ = gốc + lãi + phí kho (tất cả tài sản)
-            BigDecimal totalAmount = interestPerPeriod
-                    .add(principalAmount)
-                    .add(warehouseFeePerPeriod);
-
-            // ⭐ Tạo và lưu kỳ
-            PaymentSchedule schedule = PaymentSchedule.builder()
-                    .contractId(contractId)
-                    .periodNumber(i)
-                    .dueDate(dueDate)
-                    .interestAmount(interestPerPeriod)
-                    .principalAmount(principalAmount)
-
-                    // ⭐ NEW: lưu warehouseDailyFee = tổng phí kho/ngày của tất cả tài sản
-                    .warehouseDailyFee(warehouseFeePerPeriod)
-
-                    .totalAmount(totalAmount)
-                    .status("PENDING")
-                    .build();
-
-            paymentScheduleRepository.save(schedule);
+    public List<PaymentSchedule> generatePaymentSchedule(Loan loan,
+                                                         List<CollateralAsset> collateralAssets) {
+        if (loan == null) {
+            throw new IllegalArgumentException("Loan must not be null");
         }
+
+        List<PaymentSchedule> schedules = new ArrayList<>();
+
+        LocalDate loanDate = loan.getLoanDate();
+        if (loanDate == null) {
+            throw new IllegalArgumentException("Loan date must not be null");
+        }
+
+        int count = (loan.getPaymentCount() != null && loan.getPaymentCount() > 0)
+                ? loan.getPaymentCount()
+                : 1;
+
+        Integer termValue = loan.getInterestTermValue();
+        InterestRateUnit termUnit = loan.getInterestTermUnit();
+
+        // 1️⃣ Sinh danh sách dueDate cho tất cả các kỳ
+        List<LocalDate> dueDates = new ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            LocalDate dueDate = addTerm(loanDate, termValue, termUnit, i);
+            dueDates.add(dueDate);
+        }
+
+        // 2️⃣ Tạo từng dòng PaymentSchedule
+        for (int i = 0; i < count; i++) {
+            int periodNumber = i + 1;
+
+            LocalDate dueDate = dueDates.get(i);
+            LocalDate periodStart = (i == 0) ? loanDate : dueDates.get(i - 1);
+            LocalDate periodEnd = dueDate;
+
+            // 👉 Số ngày thực tế giữa 2 kỳ
+            long days = ChronoUnit.DAYS.between(periodStart, periodEnd);
+            if (days < 0) days = 0;
+
+            // 3️⃣ Tính tiền gốc
+            BigDecimal principalAmount = calculatePrincipalForPeriod(loan, periodNumber, count);
+
+            // 4️⃣ Tính tiền lãi theo loại lãi suất + số ngày
+            BigDecimal interestAmount = calculateInterestForPeriod(loan, periodStart, periodEnd);
+
+            // 5️⃣ Tính phí kho (từ tất cả tài sản)
+            BigDecimal warehouseFee = calculateWarehouseFeeForPeriod(collateralAssets, periodStart, periodEnd);
+
+            // 6️⃣ Tổng tiền (gốc + lãi + phí kho)
+            BigDecimal totalAmount = principalAmount
+                    .add(interestAmount)
+                    .add(warehouseFee)
+                    .setScale(0, RoundingMode.HALF_UP);
+
+            // 7️⃣ Build PaymentSchedule
+            PaymentSchedule schedule = new PaymentSchedule();
+            schedule.setPeriodNumber(periodNumber);
+            schedule.setDueDate(dueDate);
+            schedule.setPrincipalAmount(principalAmount);
+            schedule.setInterestAmount(interestAmount);
+            schedule.setWarehouseDailyFee(warehouseFee); // 👈 nhớ thêm field này vào entity
+            schedule.setTotalAmount(totalAmount);
+            schedule.setStatus(PAYMENT_PROCESSING.getName()); // hoặc status mặc định của ông
+
+            schedules.add(schedule);
+        }
+
+        return schedules;
     }
+
 
     /**
      * Tính ngày đến hạn cho từng kỳ, dựa vào đơn vị kỳ hạn.

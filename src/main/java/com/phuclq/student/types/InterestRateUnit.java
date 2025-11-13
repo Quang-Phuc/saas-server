@@ -23,7 +23,7 @@ public enum InterestRateUnit {
      * Lãi suất tính theo số tiền lãi mỗi ngày.
      * (Frontend value: INTEREST_PER_DAY)
      */
-    INTEREST_PER_DAY("Lãi/Ngày");
+    INTEREST_PER_DAY("Lãi%/Ngày");
 
     private final String description;
 
