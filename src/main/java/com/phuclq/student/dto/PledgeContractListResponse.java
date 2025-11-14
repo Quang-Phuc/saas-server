@@ -34,11 +34,33 @@ public interface PledgeContractListResponse {
     /** Số tiền vay ban đầu (gốc) */
     BigDecimal getLoanAmount();
 
-    /** Tổng số tiền gốc mà khách hàng đã thanh toán (sum của principal_amount) */
+    // === MỚI: TỔNG LÃI ===
+    /** Tổng tiền lãi phải trả (từ tất cả các kỳ trong payment_schedule) */
+    BigDecimal getTotalInterest();
+
+    // === MỚI: TỔNG PHÍ KHO ===
+    /** Tổng phí kho (từ warehouse_daily_fee trong payment_schedule) */
+    BigDecimal getTotalWarehouseFee();
+
+    // === MỚI: TỔNG PHÍ DỊCH VỤ ===
+    /** Tổng phí dịch vụ (tính từ fee_details: % hoặc cố định) */
+    BigDecimal getTotalServiceFee();
+
+    // === MỚI: TỔNG PHẢI THU ===
+    /** Tổng số tiền khách phải trả = vay + lãi + kho + phí */
+    BigDecimal getTotalReceivable();
+
+    // === MỚI: TỔNG ĐÃ THU ===
+    /** Tổng số tiền đã thanh toán (gốc + lãi + kho) */
     BigDecimal getTotalPaid();
 
-    /** Số tiền gốc còn lại chưa thanh toán */
-    BigDecimal getRemainingPrincipal();
+    // === MỚI: CÒN NỢ ===
+    /** Số tiền còn lại chưa thanh toán (totalReceivable - totalPaid) */
+    BigDecimal getRemainingAmount();
+
+    // === CŨ: ĐÃ ĐƯỢC THAY THẾ BỞI remainingAmount ===
+    // @Deprecated
+    // BigDecimal getRemainingPrincipal();
 
     /** Trạng thái khoản vay: ACTIVE, CLOSED, OVERDUE... */
     LoanStatus getStatus();
@@ -46,6 +68,6 @@ public interface PledgeContractListResponse {
     /** Nhân viên hiện đang phụ trách hợp đồng này */
     String getFollower();
 
-    /** Trạng thái hợp đồng cầm đồ (pledgeStatus): ví dụ Đang vay, Quá hạn, Đã đóng */
+    /** Trạng thái hợp đồng cầm đồ: DANG_VAY, QUA_HAN, DA_TRA_HET, DA_DONG */
     String getPledgeStatus();
 }

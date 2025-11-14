@@ -29,59 +29,98 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "c.phone_number AS phoneNumber, " +
                             "GROUP_CONCAT(DISTINCT ca.asset_name SEPARATOR ', ') AS assetName, " +
                             "l.loan_amount AS loanAmount, " +
-                            "COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount + ps.interest_amount ELSE 0 END), 0) AS totalPaid, " +
-                            "(l.loan_amount - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) AS remainingPrincipal, " +
+
+                            "COALESCE(SUM(ps.interest_amount), 0) AS totalInterest, " +
+                            "COALESCE(SUM(ps.warehouse_daily_fee), 0) AS totalWarehouseFee, " +
+                            "COALESCE(SUM(CASE " +
+                            "   WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
+                            "   WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) " +
+                            "   ELSE 0 END), 0) AS totalServiceFee, " +
+
+                            "(l.loan_amount + " +
+                            " COALESCE(SUM(ps.interest_amount), 0) + " +
+                            " COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
+                            " COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
+                            "                  WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
+                            ") AS totalReceivable, " +
+
+                            "COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
+                            "   ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee " +
+                            "END), 0) AS totalPaid, " +
+
+                            "(l.loan_amount + " +
+                            " COALESCE(SUM(ps.interest_amount), 0) + " +
+                            " COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
+                            " COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
+                            "                  WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
+                            " - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
+                            "   ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee END), 0)" +
+                            ") AS remainingAmount, " +
+
                             "CASE " +
-                            "    WHEN l.status = 'CLOSED' THEN 'DA_DONG' " +
-                            "    WHEN l.due_date < CURDATE() " +
-                            "         AND (l.loan_amount - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) > 0 " +
-                            "         THEN 'QUA_HAN' " +
-                            "    WHEN (l.loan_amount - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN ps.principal_amount ELSE 0 END), 0)) <= 0 " +
-                            "         THEN 'DA_TRA_HET' " +
-                            "    ELSE 'DANG_VAY' " +
+                            "   WHEN l.status = 'CLOSED' THEN 'DA_DONG' " +
+                            "   WHEN l.due_date < CURDATE() AND ( " +
+                            "       l.loan_amount + " +
+                            "       COALESCE(SUM(ps.interest_amount), 0) + " +
+                            "       COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
+                            "       COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
+                            "                        WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
+                            "       - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
+                            "           ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee END), 0)" +
+                            "   ) > 0 THEN 'QUA_HAN' " +
+                            "   WHEN ( " +
+                            "       l.loan_amount + " +
+                            "       COALESCE(SUM(ps.interest_amount), 0) + " +
+                            "       COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
+                            "       COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
+                            "                        WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
+                            "       - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
+                            "           ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee END), 0)" +
+                            "   ) <= 0 THEN 'DA_TRA_HET' " +
+                            "   ELSE 'DANG_VAY' " +
                             "END AS pledgeStatus, " +
+
                             "l.follower_id AS follower " +
+
                             "FROM pledge_contracts pc " +
                             "JOIN loans l ON pc.loan_id = l.id " +
                             "JOIN customer c ON pc.customer_id = c.id " +
                             "LEFT JOIN collateral_asset ca ON ca.contract_id = pc.id " +
                             "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
+                            "LEFT JOIN fee_details fd ON fd.contract_id = pc.id " +
+
                             "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                             "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
                             "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
-                            "AND (:pledgeStatus IS NULL OR " +
-                            "     CASE " +
-                            "         WHEN :pledgeStatus = 'DANG_VAY' THEN ( " +
-                            "             l.status <> 'CLOSED' " +
-                            "             AND (l.loan_amount - COALESCE((SELECT SUM(ps2.principal_amount) FROM payment_schedule ps2 WHERE ps2.contract_id = pc.id AND ps2.status = 'PAID'), 0)) > 0 " +
-                            "             AND l.due_date >= CURDATE() " +
-                            "         ) " +
-                            "         WHEN :pledgeStatus = 'QUA_HAN' THEN ( " +
-                            "             l.status <> 'CLOSED' " +
-                            "             AND l.due_date < CURDATE() " +
-                            "             AND (l.loan_amount - COALESCE((SELECT SUM(ps2.principal_amount) FROM payment_schedule ps2 WHERE ps2.contract_id = pc.id AND ps2.status = 'PAID'), 0)) > 0 " +
-                            "         ) " +
-                            "         WHEN :pledgeStatus = 'DA_TRA_HET' THEN ( " +
-                            "             (l.loan_amount - COALESCE((SELECT SUM(ps2.principal_amount) FROM payment_schedule ps2 WHERE ps2.contract_id = pc.id AND ps2.status = 'PAID'), 0)) <= 0 " +
-                            "         ) " +
-                            "         WHEN :pledgeStatus = 'DA_DONG' THEN (l.status = 'CLOSED') " +
-                            "         ELSE 1=1 " +
-                            "     END " +
-                            ") " +
+
                             "AND (:status IS NULL OR l.status = :status) " +
                             "AND (:storeId IS NULL OR pc.store_id = :storeId) " +
                             "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
                             "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
                             "AND (:follower IS NULL OR l.follower_id = :follower) " +
+
                             "GROUP BY pc.id, pc.contract_code, l.loan_date, l.due_date, " +
                             "c.full_name, c.phone_number, l.loan_amount, l.status, l.follower_id " +
+
+                            // DÙNG HAVING ĐỂ LỌC remainingAmount
+                            "HAVING (:pledgeStatus IS NULL OR " +
+                            "   CASE " +
+                            "       WHEN :pledgeStatus = 'DANG_VAY' THEN (remainingAmount > 0 AND l.due_date >= CURDATE()) " +
+                            "       WHEN :pledgeStatus = 'QUA_HAN' THEN (remainingAmount > 0 AND l.due_date < CURDATE()) " +
+                            "       WHEN :pledgeStatus = 'DA_TRA_HET' THEN (remainingAmount <= 0) " +
+                            "       WHEN :pledgeStatus = 'DA_DONG' THEN (l.status = 'CLOSED') " +
+                            "       ELSE 1=1 " +
+                            "   END) " +
+
                             "ORDER BY l.loan_date DESC",
+
             countQuery =
                     "SELECT COUNT(DISTINCT pc.id) " +
                             "FROM pledge_contracts pc " +
                             "JOIN loans l ON pc.loan_id = l.id " +
                             "JOIN customer c ON pc.customer_id = c.id " +
                             "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
+                            "LEFT JOIN fee_details fd ON fd.contract_id = pc.id " +
                             "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                             "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
                             "   OR pc.contract_code LIKE CONCAT('%', :keyword, '%')) " +
@@ -90,6 +129,7 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "AND (:fromDate IS NULL OR l.loan_date >= :fromDate) " +
                             "AND (:toDate IS NULL OR l.loan_date <= :toDate) " +
                             "AND (:follower IS NULL OR l.follower_id = :follower)",
+
             nativeQuery = true
     )
     Page<PledgeContractListResponse> searchPledges(
@@ -102,7 +142,6 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
             @Param("pledgeStatus") String pledgeStatus,
             Pageable pageable
     );
-
 
 
 

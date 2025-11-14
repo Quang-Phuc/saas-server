@@ -4,17 +4,11 @@ import com.phuclq.student.component.RestEntityResponse;
 import com.phuclq.student.domain.PledgeContract;
 import com.phuclq.student.dto.PledgeContractDto;
 import com.phuclq.student.dto.PledgeContractListResponse;
-import com.phuclq.student.dto.PledgeContractListResponseImpl;
 import com.phuclq.student.dto.PledgeSearchRequest;
 import com.phuclq.student.repository.PledgeRepository;
 import com.phuclq.student.service.PledgeContractService;
-import com.phuclq.student.types.LoanStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.annotation.MultipartConfig;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
