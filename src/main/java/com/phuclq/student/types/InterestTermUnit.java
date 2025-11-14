@@ -9,6 +9,7 @@ public enum InterestTermUnit {
 
     DAY("Ngày"),
     WEEK("Tuần"),
+    YEAR("Năm"),
 
     /**
      * Tháng định kỳ, thường dùng cho các hợp đồng cố định ngày trả (ví dụ: ngày 5 hàng tháng).

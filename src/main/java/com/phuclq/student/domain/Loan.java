@@ -66,7 +66,7 @@ public class Loan extends Auditable<String> {
      * Ví dụ: "Ngay", "Tuan", "Thang".
      */
     @Column(name = "interest_term_unit")
-    private InterestRateUnit interestTermUnit;
+    private InterestTermUnit interestTermUnit;
 
     /**
      * Giá trị của lãi suất (ví dụ: 1.5).
@@ -80,7 +80,8 @@ public class Loan extends Auditable<String> {
      * Ví dụ: "Lai/Trieu/Ngay", "Lai%/Thang".
      */
     @Column(name = "interest_rate_unit")
-    private String interestRateUnit;
+    @Enumerated(EnumType.STRING)
+    private InterestRateUnit interestRateUnit;
 
     /**
      * Tổng số lần (kỳ) khách hàng phải trả (cho cả gốc và lãi).

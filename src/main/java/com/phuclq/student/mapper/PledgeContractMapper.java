@@ -3,6 +3,7 @@ package com.phuclq.student.mapper;
 import com.phuclq.student.domain.*; // (Import các Entity)
 import com.phuclq.student.dto.*; // (Import các DTO)
 import com.phuclq.student.types.InterestPaymentType;
+import com.phuclq.student.types.InterestRateUnit;
 import com.phuclq.student.types.InterestTermUnit;
 import com.phuclq.student.types.LoanStatus;
 import org.springframework.stereotype.Component;
@@ -89,7 +90,8 @@ public class PledgeContractMapper {
         }
 
         entity.setInterestRateValue(dto.getInterestRateValue());
-        entity.setInterestRateUnit(dto.getInterestRateUnit());
+        entity.setInterestRateUnit(InterestRateUnit.valueOf(dto.getInterestRateUnit()));
+
         entity.setPaymentCount(dto.getPaymentCount());
 
         try {
@@ -173,22 +175,46 @@ public class PledgeContractMapper {
 
     public LoanDto toLoanDto(Loan entity) {
         if (entity == null) return null;
+
         LoanDto dto = new LoanDto();
+
         dto.setLoanDate(entity.getLoanDate() != null ? entity.getLoanDate().toString() : null);
         dto.setLoanAmount(entity.getLoanAmount());
+
         dto.setInterestTermValue(entity.getInterestTermValue());
-        dto.setInterestTermUnit(entity.getInterestTermUnit() != null ? entity.getInterestTermUnit().name() : null);
+
+        // Convert ENUM → String cho FE
+        dto.setInterestTermUnit(
+                entity.getInterestTermUnit() != null
+                        ? entity.getInterestTermUnit().name()
+                        : null
+        );
+
         dto.setInterestRateValue(entity.getInterestRateValue());
-        dto.setInterestRateUnit(entity.getInterestRateUnit());
+
+        // Convert ENUM → String cho FE
+        dto.setInterestRateUnit(
+                entity.getInterestRateUnit() != null
+                        ? entity.getInterestRateUnit().name()
+                        : null
+        );
+
         dto.setPaymentCount(entity.getPaymentCount());
-        dto.setInterestPaymentType(entity.getInterestPaymentType() != null ? entity.getInterestPaymentType().name() : null);
+
+        dto.setInterestPaymentType(
+                entity.getInterestPaymentType() != null
+                        ? entity.getInterestPaymentType().name()
+                        : null
+        );
+
         dto.setNote(entity.getNote());
-//        dto.setLoanStatus(entity.getLoanStatus());
         dto.setPartnerType(entity.getPartnerType());
         dto.setFollower(entity.getFollower());
         dto.setCustomerSource(entity.getCustomerSource());
+
         return dto;
     }
+
 
     public CollateralDto toCollateralDto(CollateralAsset entity) {
         if (entity == null) return null;

@@ -156,6 +156,20 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             throw new RuntimeException("Lỗi khi tạo hợp đồng: " + e.getMessage(), e);
         }
     }
+    private BigDecimal calculateWarehouseFee(List<CollateralAsset> assets, LocalDate start, LocalDate end) {
+        if (assets == null || assets.isEmpty()) return BigDecimal.ZERO;
+
+        long days = daysBetween(start, end);
+
+        BigDecimal dailyTotal = assets.stream()
+                .map(a -> a.getWarehouseDailyFee() != null ? a.getWarehouseDailyFee() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return dailyTotal
+                .multiply(BigDecimal.valueOf(days))
+                .setScale(0, RoundingMode.HALF_UP);
+    }
+
     private BigDecimal calculateWarehouseFeeForPeriod(List<CollateralAsset> assets,
                                                       LocalDate startDate,
                                                       LocalDate endDate) {
@@ -177,124 +191,71 @@ public class PledgeContractServiceImpl implements PledgeContractService {
                 .setScale(0, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal calculatePrincipalForPeriod(Loan loan,
-                                                   int periodIndex,
-                                                   int totalPeriods) {
-        if (loan.getLoanAmount() == null) return BigDecimal.ZERO;
-
+    private BigDecimal calculatePrincipalForPeriod(Loan loan, int index, int total) {
         BigDecimal principal = loan.getLoanAmount();
-        InterestPaymentType type = loan.getInterestPaymentType(); // INSTALLMENT, PERIODIC_INTEREST, LUMP_SUM_END
+        InterestPaymentType type = loan.getInterestPaymentType();
 
-        if (type == null) {
-            type = InterestPaymentType.PERIODIC_INTEREST; // mặc định: gốc trả cuối kỳ
-        }
+        if (type == null) type = InterestPaymentType.PERIODIC_INTEREST;
 
         switch (type) {
             case INSTALLMENT:
-                // chia đều + dồn phần dư vào kỳ cuối
-                BigDecimal base = principal
-                        .divide(BigDecimal.valueOf(totalPeriods), 0, RoundingMode.DOWN);
-                BigDecimal remainder = principal.subtract(
-                        base.multiply(BigDecimal.valueOf(totalPeriods))
-                );
-
-                if (periodIndex == totalPeriods) {
-                    return base.add(remainder);
-                } else {
-                    return base;
-                }
+                BigDecimal base = principal.divide(BigDecimal.valueOf(total), 0, RoundingMode.DOWN);
+                BigDecimal remainder = principal.subtract(base.multiply(BigDecimal.valueOf(total)));
+                return (index == total) ? base.add(remainder) : base;
 
             case PERIODIC_INTEREST:
-            case LUMP_SUM_END:
             default:
-                // Gốc trả cuối kỳ
-                return (periodIndex == totalPeriods) ? principal : BigDecimal.ZERO;
+                return (index == total) ? principal : BigDecimal.ZERO;
         }
     }
 
-    private LocalDate addTerm(LocalDate baseDate,
-                              Integer termValue,
-                              InterestTermUnit termUnit,
-                              int periodIndex) {
-        if (baseDate == null) {
-            throw new IllegalArgumentException("loanDate cannot be null");
-        }
 
-        int value = (termValue != null ? termValue : 1) * periodIndex;
-        InterestTermUnit unit = termUnit != null ? termUnit : InterestTermUnit.MONTH;
+    private LocalDate addTerm(LocalDate base, int termValue, InterestTermUnit unit, int index) {
+        if (unit == null) unit = InterestTermUnit.MONTH;
+        if (termValue <= 0) termValue = 1;
 
         switch (unit) {
             case DAY:
-                return baseDate.plusDays(value);
+                return base.plusDays((long) termValue * index);
             case WEEK:
-                return baseDate.plusWeeks(value);
-            case MONTH:
-            case PERIODIC_MONTH:
-                return baseDate.plusMonths(value);
-//            case YEAR:
-//                return baseDate.plusYears(value);
+                return base.plusWeeks((long) termValue * index);
+            case YEAR:
+                return base.plusYears((long) termValue * index);
             default:
-                return baseDate.plusDays(value);
+                return base.plusMonths((long) termValue * index);
         }
     }
 
-    private BigDecimal calculateInterestForPeriod(Loan loan,
-                                                  LocalDate startDate,
-                                                  LocalDate endDate) {
-        if (loan == null || loan.getLoanAmount() == null || loan.getInterestRateValue() == null) {
-            return BigDecimal.ZERO;
-        }
+    private long daysBetween(LocalDate start, LocalDate end) {
+        long days = ChronoUnit.DAYS.between(start, end);
+        return Math.max(days, 0);
+    }
 
-        long days = ChronoUnit.DAYS.between(startDate, endDate);
-        if (days <= 0) {
-            return BigDecimal.ZERO;
-        }
+    private BigDecimal calculateInterestForPeriod(Loan loan, LocalDate startDate, LocalDate endDate) {
+        long days = daysBetween(startDate, endDate);
+        if (days <= 0) return BigDecimal.ZERO;
 
-        BigDecimal rate = loan.getInterestRateValue();   // giá trị lãi
-        BigDecimal amount = loan.getLoanAmount();        // số tiền vay
-
-        // Enum của ông: INTEREST_PER_MILLION_PER_DAY, INTEREST_PERCENT_PER_MONTH, INTEREST_PER_DAY
+        BigDecimal amount = loan.getLoanAmount();
+        BigDecimal rateValue = loan.getInterestRateValue();
         InterestRateUnit unit = loan.getInterestRateUnit();
-        if (unit == null) {
-            // fallback: cứ coi là Lãi/Triệu/Ngày
-            unit = LoanInterestRateUnit.INTEREST_PER_MILLION_PER_DAY;
-        }
 
         switch (unit) {
 
             case INTEREST_PER_MILLION_PER_DAY:
-                // rate = VNĐ / triệu / ngày
-                // interest = rate * (amount / 1_000_000) * days
-                BigDecimal principalInMillions = amount
-                        .divide(BigDecimal.valueOf(1_000_000), 10, RoundingMode.HALF_UP);
-
-                return rate
-                        .multiply(principalInMillions)
+                BigDecimal millions = amount.divide(BigDecimal.valueOf(1_000_000), 10, RoundingMode.HALF_UP);
+                return rateValue.multiply(millions)
                         .multiply(BigDecimal.valueOf(days))
                         .setScale(0, RoundingMode.HALF_UP);
 
             case INTEREST_PERCENT_PER_MONTH:
-                // rate = % / tháng
-                // interest = amount × (rate/100) × (days / 30)
-                BigDecimal monthlyRate = rate
-                        .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
-
-                BigDecimal daysRatio = BigDecimal.valueOf(days)
-                        .divide(BigDecimal.valueOf(30), 10, RoundingMode.HALF_UP);
-
-                return amount
-                        .multiply(monthlyRate)
-                        .multiply(daysRatio)
+                BigDecimal rateMonthly = rateValue.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+                BigDecimal ratio = BigDecimal.valueOf(days).divide(BigDecimal.valueOf(30), 10, RoundingMode.HALF_UP);
+                return amount.multiply(rateMonthly).multiply(ratio)
                         .setScale(0, RoundingMode.HALF_UP);
 
             case INTEREST_PER_DAY:
-                // rate = % / ngày
-                // interest = amount × (rate/100) × days
-                BigDecimal dailyRate = rate
-                        .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
-
-                return amount
-                        .multiply(dailyRate)
+                BigDecimal dailyRate = rateValue.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+                return amount.multiply(dailyRate)
                         .multiply(BigDecimal.valueOf(days))
                         .setScale(0, RoundingMode.HALF_UP);
 
@@ -302,6 +263,8 @@ public class PledgeContractServiceImpl implements PledgeContractService {
                 return BigDecimal.ZERO;
         }
     }
+
+
 
     @Override
     public PledgeContractDetailResponse getPledgeDetail(Long id) {
@@ -423,75 +386,45 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         }
     }
 
-    public List<PaymentSchedule> generatePaymentSchedule(Loan loan,
-                                                         List<CollateralAsset> collateralAssets) {
-        if (loan == null) {
-            throw new IllegalArgumentException("Loan must not be null");
-        }
+    public List<PaymentSchedule> generatePaymentSchedule(Loan loan, List<CollateralAsset> assets) {
 
-        List<PaymentSchedule> schedules = new ArrayList<>();
-
+        int count = loan.getPaymentCount() == null ? 1 : loan.getPaymentCount();
         LocalDate loanDate = loan.getLoanDate();
-        if (loanDate == null) {
-            throw new IllegalArgumentException("Loan date must not be null");
-        }
 
-        int count = (loan.getPaymentCount() != null && loan.getPaymentCount() > 0)
-                ? loan.getPaymentCount()
-                : 1;
+        List<PaymentSchedule> result = new ArrayList<>();
 
-        Integer termValue = loan.getInterestTermValue();
-        InterestRateUnit termUnit = loan.getInterestTermUnit();
-
-        // 1️⃣ Sinh danh sách dueDate cho tất cả các kỳ
-        List<LocalDate> dueDates = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
-            LocalDate dueDate = addTerm(loanDate, termValue, termUnit, i);
-            dueDates.add(dueDate);
+
+            LocalDate dueDate = addTerm(
+                    loanDate,
+                    loan.getInterestTermValue(),
+                    loan.getInterestTermUnit(),
+                    i
+            );
+
+            LocalDate periodStart = (i == 1) ? loanDate : result.get(i - 2).getDueDate();
+
+            BigDecimal interest = calculateInterestForPeriod(loan, periodStart, dueDate);
+            BigDecimal principal = calculatePrincipalForPeriod(loan, i, count);
+            BigDecimal warehouseFee = calculateWarehouseFee(assets, periodStart, dueDate);
+
+            BigDecimal total = principal.add(interest).add(warehouseFee);
+
+            PaymentSchedule ps = new PaymentSchedule();
+            ps.setPeriodNumber(i);
+            ps.setDueDate(dueDate);
+            ps.setPrincipalAmount(principal);
+            ps.setInterestAmount(interest);
+            ps.setWarehouseDailyFee(warehouseFee);
+            ps.setTotalAmount(total);
+            ps.setStatus("PENDING");
+
+            result.add(ps);
         }
 
-        // 2️⃣ Tạo từng dòng PaymentSchedule
-        for (int i = 0; i < count; i++) {
-            int periodNumber = i + 1;
-
-            LocalDate dueDate = dueDates.get(i);
-            LocalDate periodStart = (i == 0) ? loanDate : dueDates.get(i - 1);
-            LocalDate periodEnd = dueDate;
-
-            // 👉 Số ngày thực tế giữa 2 kỳ
-            long days = ChronoUnit.DAYS.between(periodStart, periodEnd);
-            if (days < 0) days = 0;
-
-            // 3️⃣ Tính tiền gốc
-            BigDecimal principalAmount = calculatePrincipalForPeriod(loan, periodNumber, count);
-
-            // 4️⃣ Tính tiền lãi theo loại lãi suất + số ngày
-            BigDecimal interestAmount = calculateInterestForPeriod(loan, periodStart, periodEnd);
-
-            // 5️⃣ Tính phí kho (từ tất cả tài sản)
-            BigDecimal warehouseFee = calculateWarehouseFeeForPeriod(collateralAssets, periodStart, periodEnd);
-
-            // 6️⃣ Tổng tiền (gốc + lãi + phí kho)
-            BigDecimal totalAmount = principalAmount
-                    .add(interestAmount)
-                    .add(warehouseFee)
-                    .setScale(0, RoundingMode.HALF_UP);
-
-            // 7️⃣ Build PaymentSchedule
-            PaymentSchedule schedule = new PaymentSchedule();
-            schedule.setPeriodNumber(periodNumber);
-            schedule.setDueDate(dueDate);
-            schedule.setPrincipalAmount(principalAmount);
-            schedule.setInterestAmount(interestAmount);
-            schedule.setWarehouseDailyFee(warehouseFee); // 👈 nhớ thêm field này vào entity
-            schedule.setTotalAmount(totalAmount);
-            schedule.setStatus(PAYMENT_PROCESSING.getName()); // hoặc status mặc định của ông
-
-            schedules.add(schedule);
-        }
-
-        return schedules;
+        return result;
     }
+
 
 
     /**
@@ -717,7 +650,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
 
             // 8️⃣ Cập nhật lịch trả lãi (nếu cần tái sinh)
             paymentScheduleRepository.deleteByContractId(id);
-            generatePaymentSchedule(updatedLoan, id);
+           // generatePaymentSchedule(updatedLoan, id);
 
             // 9️⃣ Cập nhật các file đính kèm (nếu có)
             // if (attachmentFiles != null) { ... }
