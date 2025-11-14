@@ -41,5 +41,13 @@ public class PaymentScheduleTransaction extends Auditable<String> {
     @Column(name = "payment_method")
     private String paymentMethod;   // cash / bank_transfer ...
 
+    // === QUAN HỆ CHÍNH: THAY paymentScheduleId ===
+// === 2. TRỎ VỀ GIAO DỊCH GỐC ===
+    @Column(name = "source_transaction_id")
+    private Long sourceTransactionId;
+
+    // === 1. ĐÁNH DẤU DƯ TIỀN ===
+    @Column(name = "is_excess", nullable = false)
+    private boolean isExcess = false;
 
 }

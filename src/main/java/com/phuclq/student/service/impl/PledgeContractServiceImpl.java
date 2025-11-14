@@ -125,7 +125,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             }
 
             // 8️⃣ Sinh lịch trả lãi (PaymentSchedule)
-            generatePaymentSchedule(savedLoan,  savedCollaterals);
+            generatePaymentSchedule(savedLoan,  savedCollaterals,contractEntity.getId());
 
             // 9️⃣ Lưu thông tin các loại phí
             saveFeeDetails(dto.getFees(), savedContract.getId());
@@ -386,7 +386,9 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         }
     }
 
-    public List<PaymentSchedule> generatePaymentSchedule(Loan loan, List<CollateralAsset> assets) {
+    public List<PaymentSchedule> generatePaymentSchedule(Loan loan,
+                                                         List<CollateralAsset> assets,
+                                                         Long contractId) {
 
         int count = loan.getPaymentCount() == null ? 1 : loan.getPaymentCount();
         LocalDate loanDate = loan.getLoanDate();
@@ -411,6 +413,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             BigDecimal total = principal.add(interest).add(warehouseFee);
 
             PaymentSchedule ps = new PaymentSchedule();
+            ps.setContractId(contractId);            // ⬅ QUAN TRỌNG
             ps.setPeriodNumber(i);
             ps.setDueDate(dueDate);
             ps.setPrincipalAmount(principal);
@@ -422,8 +425,12 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             result.add(ps);
         }
 
+        // LƯU VÀO DB
+        paymentScheduleRepository.saveAll(result);
+
         return result;
     }
+
 
 
 

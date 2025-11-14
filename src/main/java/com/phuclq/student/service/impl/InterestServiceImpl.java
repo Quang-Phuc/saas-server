@@ -44,7 +44,6 @@ public class InterestServiceImpl implements InterestService {
             throw new BusinessHandleException("SS900"); // Invalid amount
         }
 
-        // Lấy danh sách kỳ theo thứ tự
         List<PaymentSchedule> schedules =
                 paymentScheduleRepository.findByContractIdOrderByPeriodNumberAsc(contractId);
 
@@ -52,18 +51,25 @@ public class InterestServiceImpl implements InterestService {
             throw new BusinessHandleException("SS901"); // Contract not found
         }
 
-        // Bắt đầu từ kỳ FE truyền (periodNumber)
         boolean startAllocating = false;
+        int currentIndex = 0;
 
-        for (PaymentSchedule schedule : schedules) {
-
-            if (!startAllocating) {
-                if (schedule.getPeriodNumber().equals(req.getPeriodNumber())) {
-                    startAllocating = true;
-                } else {
-                    continue;
-                }
+        // Tìm kỳ bắt đầu
+        for (int i = 0; i < schedules.size(); i++) {
+            if (schedules.get(i).getPeriodNumber().equals(req.getPeriodNumber())) {
+                startAllocating = true;
+                currentIndex = i;
+                break;
             }
+        }
+
+        if (!startAllocating) {
+            throw new BusinessHandleException("SS902"); // Kỳ không tồn tại
+        }
+
+        // === BƯỚC 1: THANH TOÁN TỪ KỲ HIỆN TẠI TRỞ ĐI ===
+        for (int i = currentIndex; i < schedules.size() && remaining.compareTo(BigDecimal.ZERO) > 0; i++) {
+            PaymentSchedule schedule = schedules.get(i);
 
             BigDecimal paidSoFar = schedule.getTransactions()
                     .stream()
@@ -72,36 +78,54 @@ public class InterestServiceImpl implements InterestService {
 
             BigDecimal need = schedule.getTotalAmount().subtract(paidSoFar);
 
-            // đã trả đủ rồi → bỏ qua
             if (need.compareTo(BigDecimal.ZERO) <= 0) {
                 schedule.setStatus("PAID");
                 paymentScheduleRepository.save(schedule);
                 continue;
             }
 
-            // Nếu tiền còn lại đủ trả trọn kỳ
             if (remaining.compareTo(need) >= 0) {
+                // Trả đủ kỳ
                 createTransaction(schedule, need, req);
                 remaining = remaining.subtract(need);
-
                 schedule.setStatus("PAID");
-                paymentScheduleRepository.save(schedule);
-            }
-            else {
-                // Chỉ trả được một phần
+            } else {
+                // Trả một phần
                 createTransaction(schedule, remaining, req);
                 schedule.setStatus("PARTIAL");
-                paymentScheduleRepository.save(schedule);
-
                 remaining = BigDecimal.ZERO;
-                break;
             }
+            paymentScheduleRepository.save(schedule);
         }
 
-        // Nếu hết kỳ rồi vẫn dư tiền → tùy bạn xử lý
+        // === BƯỚC 2: NẾU VẪN CÒN DƯ → TẠO GIAO DỊCH "DƯ TIỀN" CHO KỲ CUỐI ===
         if (remaining.compareTo(BigDecimal.ZERO) > 0) {
-            // Có thể tạo record trong bảng dư tiền cuối cùng
-            // Hoặc bỏ qua, tùy nghiệp vụ.
+            PaymentSchedule lastSchedule = schedules.get(schedules.size() - 1);
+
+            // Tạo giao dịch dư (có thể có kỳ mới nếu cần)
+            PaymentScheduleTransaction excessTx = new PaymentScheduleTransaction();
+            excessTx.setSourceTransactionId(lastSchedule.getId());
+            excessTx.setAmount(remaining);
+            excessTx.setPaymentDate(req.getPayDate());
+            excessTx.setPaymentMethod(req.getPaymentMethod());
+            excessTx.setExcess(true);
+            excessTx.setNote("Dư tiền từ kỳ " + req.getPeriodNumber() + " - áp dụng kỳ sau");
+
+            // Lưu giao dịch dư
+            transRepo.save(excessTx);
+
+            // Cập nhật trạng thái kỳ cuối (nếu đã đủ thì vẫn PAID)
+            BigDecimal totalPaid = lastSchedule.getTransactions()
+                    .stream()
+                    .map(PaymentScheduleTransaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (totalPaid.compareTo(lastSchedule.getTotalAmount()) >= 0) {
+                lastSchedule.setStatus("PAID");
+            } else {
+                lastSchedule.setStatus("PARTIAL");
+            }
+            paymentScheduleRepository.save(lastSchedule);
         }
     }
 
