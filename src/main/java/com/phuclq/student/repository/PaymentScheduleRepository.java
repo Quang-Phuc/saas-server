@@ -3,8 +3,11 @@ import com.phuclq.student.domain.PaymentSchedule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,4 +28,29 @@ public interface PaymentScheduleRepository extends JpaRepository<PaymentSchedule
     List<PaymentSchedule> findByContractIdOrderByPeriodNumberAsc(Long contractId);
 
     Optional<PaymentSchedule> findByContractIdAndPeriodNumber(Long contractId, Integer periodNumber);
+
+    // PaymentScheduleRepository.java
+    List<PaymentSchedule> findByDueDateBeforeAndStatusNotIn(LocalDate dueDate, List<String> statuses);
+
+    boolean existsByContractIdAndDueDateBeforeAndStatusNotIn(
+            Long contractId, LocalDate dueDate, List<String> statuses);
+
+    // PaymentScheduleRepository.java
+    List<PaymentSchedule> findByDueDateBeforeAndStatusNot(LocalDate dueDate, String status);
+
+    boolean existsByContractIdAndDueDateBeforeAndStatusIn(
+            Long contractId, LocalDate dueDate, List<String> statuses);
+
+    // PaymentScheduleRepository.java
+    List<PaymentSchedule> findByDueDateLessThanEqual(LocalDate dueDate);
+
+    @Query(
+            "SELECT ps FROM PaymentSchedule ps " +
+                    "LEFT JOIN ps.transactions tx " +
+                    "WHERE ps.dueDate <= :today " +
+                    "GROUP BY ps " +
+                    "HAVING COALESCE(SUM(tx.amount), 0) < ps.totalAmount"
+    )
+    List<PaymentSchedule> findUnpaidSchedulesDueTodayOrBefore(@Param("today") LocalDate today);
+
 }

@@ -344,15 +344,7 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         FeesDto feesDto = new FeesDto();
         feeDetails.forEach(f -> {
             switch (f.getFeeType()) {
-                case "warehouseFee":
-                    feesDto.setWarehouseFee(new FeeItemDto(f.getValueType(), f.getValue()));
-                    break;
-                case "storageFee":
-                    feesDto.setStorageFee(new FeeItemDto(f.getValueType(), f.getValue()));
-                    break;
-                case "riskFee":
-                    feesDto.setRiskFee(new FeeItemDto(f.getValueType(), f.getValue()));
-                    break;
+
                 case "managementFee":
                     feesDto.setManagementFee(new FeeItemDto(f.getValueType(), f.getValue()));
                     break;
@@ -395,43 +387,85 @@ public class PledgeContractServiceImpl implements PledgeContractService {
 
         List<PaymentSchedule> result = new ArrayList<>();
 
+        // GỐC BAN ĐẦU
+        BigDecimal remainingPrincipal = loan.getLoanAmount();
+
         for (int i = 1; i <= count; i++) {
 
-            LocalDate dueDate = addTerm(
-                    loanDate,
-                    loan.getInterestTermValue(),
-                    loan.getInterestTermUnit(),
-                    i
-            );
-
             LocalDate periodStart = (i == 1) ? loanDate : result.get(i - 2).getDueDate();
+            LocalDate dueDate = addTerm(loanDate, loan.getInterestTermValue(), loan.getInterestTermUnit(), i);
 
-            BigDecimal interest = calculateInterestForPeriod(loan, periodStart, dueDate);
-            BigDecimal principal = calculatePrincipalForPeriod(loan, i, count);
+            // TÍNH GỐC TRẢ KỲ NÀY
+            BigDecimal principalThisPeriod = calculatePrincipalForPeriod(loan, i, count);
+
+            // TÍNH LÃI DỰA TRÊN GỐC CÒN LẠI TRƯỚC KỲ NÀY
+            BigDecimal interest = calculateInterestForPeriodWithRemaining(
+                    loan, remainingPrincipal, periodStart, dueDate);
+
+            // TÍNH PHÍ KHO
             BigDecimal warehouseFee = calculateWarehouseFee(assets, periodStart, dueDate);
 
-            BigDecimal total = principal.add(interest).add(warehouseFee);
+            // TỔNG CỘNG
+            BigDecimal total = principalThisPeriod.add(interest).add(warehouseFee);
 
+            // TẠO LỊCH
             PaymentSchedule ps = new PaymentSchedule();
-            ps.setContractId(contractId);            // ⬅ QUAN TRỌNG
+            ps.setContractId(contractId);
             ps.setPeriodNumber(i);
             ps.setDueDate(dueDate);
-            ps.setPrincipalAmount(principal);
+            ps.setPrincipalAmount(principalThisPeriod);
             ps.setInterestAmount(interest);
             ps.setWarehouseDailyFee(warehouseFee);
             ps.setTotalAmount(total);
             ps.setStatus("PENDING");
 
             result.add(ps);
+
+            // CẬP NHẬT GỐC CÒN LẠI CHO KỲ SAU
+            remainingPrincipal = remainingPrincipal.subtract(principalThisPeriod);
+            if (remainingPrincipal.compareTo(BigDecimal.ZERO) < 0) {
+                remainingPrincipal = BigDecimal.ZERO;
+            }
         }
 
-        // LƯU VÀO DB
         paymentScheduleRepository.saveAll(result);
-
         return result;
     }
 
+    private BigDecimal calculateInterestForPeriodWithRemaining(
+            Loan loan, BigDecimal remainingPrincipal, LocalDate startDate, LocalDate endDate) {
 
+        long days = daysBetween(startDate, endDate);
+        if (days <= 0 || remainingPrincipal.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal rateValue = loan.getInterestRateValue();
+        InterestRateUnit unit = loan.getInterestRateUnit();
+
+        switch (unit) {
+            case INTEREST_PER_MILLION_PER_DAY:
+                BigDecimal millions = remainingPrincipal.divide(BigDecimal.valueOf(1_000_000), 10, RoundingMode.HALF_UP);
+                return rateValue.multiply(millions)
+                        .multiply(BigDecimal.valueOf(days))
+                        .setScale(0, RoundingMode.HALF_UP);
+
+            case INTEREST_PERCENT_PER_MONTH:
+                BigDecimal rateMonthly = rateValue.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+                BigDecimal ratio = BigDecimal.valueOf(days).divide(BigDecimal.valueOf(30), 10, RoundingMode.HALF_UP);
+                return remainingPrincipal.multiply(rateMonthly).multiply(ratio)
+                        .setScale(0, RoundingMode.HALF_UP);
+
+            case INTEREST_PER_DAY:
+                BigDecimal dailyRate = rateValue.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+                return remainingPrincipal.multiply(dailyRate)
+                        .multiply(BigDecimal.valueOf(days))
+                        .setScale(0, RoundingMode.HALF_UP);
+
+            default:
+                return BigDecimal.ZERO;
+        }
+    }
 
 
     /**
@@ -556,36 +590,16 @@ public class PledgeContractServiceImpl implements PledgeContractService {
         if (feesDto == null) return;
 
         // 1. Phí kho
-        if (feesDto.getWarehouseFee() != null) {
+        if (feesDto.getAppraisalFee() != null) {
             FeeDetail fee = new FeeDetail();
             fee.setContractId(contractId);
-            fee.setFeeType("warehouseFee");
-            fee.setValueType(feesDto.getWarehouseFee().getType());
-            fee.setValue(feesDto.getWarehouseFee().getValue());
+            fee.setFeeType("appraisalFee");
+            fee.setValueType(feesDto.getAppraisalFee().getType());
+            fee.setValue(feesDto.getAppraisalFee().getValue());
             feeDetailRepository.save(fee);
         }
 
         // 2. Phí lưu kho
-        if (feesDto.getStorageFee() != null) {
-            FeeDetail fee = new FeeDetail();
-            fee.setContractId(contractId);
-            fee.setFeeType("storageFee");
-            fee.setValueType(feesDto.getStorageFee().getType());
-            fee.setValue(feesDto.getStorageFee().getValue());
-            feeDetailRepository.save(fee);
-        }
-
-        // 3. Phí rủi ro
-        if (feesDto.getRiskFee() != null) {
-            FeeDetail fee = new FeeDetail();
-            fee.setContractId(contractId);
-            fee.setFeeType("riskFee");
-            fee.setValueType(feesDto.getRiskFee().getType());
-            fee.setValue(feesDto.getRiskFee().getValue());
-            feeDetailRepository.save(fee);
-        }
-
-        // 4. Phí quản lý
         if (feesDto.getManagementFee() != null) {
             FeeDetail fee = new FeeDetail();
             fee.setContractId(contractId);
@@ -594,6 +608,8 @@ public class PledgeContractServiceImpl implements PledgeContractService {
             fee.setValue(feesDto.getManagementFee().getValue());
             feeDetailRepository.save(fee);
         }
+
+
     }
     private String generateContractCode() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
