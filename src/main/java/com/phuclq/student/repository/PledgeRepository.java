@@ -32,11 +32,13 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 
                             "COALESCE(ps.totalInterest, 0) AS totalInterest, " +
                             "COALESCE(ps.totalWarehouseFee, 0) AS totalWarehouseFee, " +
+                            "COALESCE(ps.totalPenaltyInterest, 0) AS totalPenaltyInterest, " +
                             "COALESCE(fd.totalServiceFee, 0) AS totalServiceFee, " +
 
                             "(l.loan_amount " +
                             " + COALESCE(ps.totalInterest, 0) " +
                             " + COALESCE(ps.totalWarehouseFee, 0) " +
+                            " + COALESCE(ps.totalPenaltyInterest, 0) " +
                             " + COALESCE(fd.totalServiceFee, 0)" +
                             ") AS totalReceivable, " +
 
@@ -45,6 +47,7 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "(l.loan_amount " +
                             " + COALESCE(ps.totalInterest, 0) " +
                             " + COALESCE(ps.totalWarehouseFee, 0) " +
+                            " + COALESCE(ps.totalPenaltyInterest, 0) " +
                             " + COALESCE(fd.totalServiceFee, 0) " +
                             " - COALESCE(paid.totalPaid, 0)" +
                             ") AS remainingAmount, " +
@@ -55,6 +58,7 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "       (l.loan_amount " +
                             "        + COALESCE(ps.totalInterest, 0) " +
                             "        + COALESCE(ps.totalWarehouseFee, 0) " +
+                            "        + COALESCE(ps.totalPenaltyInterest, 0) " +
                             "        + COALESCE(fd.totalServiceFee, 0) " +
                             "        - COALESCE(paid.totalPaid, 0)) " +
                             "   ) > 0 THEN 'QUA_HAN' " +
@@ -62,6 +66,7 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "       l.loan_amount " +
                             "       + COALESCE(ps.totalInterest, 0) " +
                             "       + COALESCE(ps.totalWarehouseFee, 0) " +
+                            "       + COALESCE(ps.totalPenaltyInterest, 0) " +
                             "       + COALESCE(fd.totalServiceFee, 0) " +
                             "       - COALESCE(paid.totalPaid, 0) " +
                             "   ) <= 0 THEN 'DA_TRA_HET' " +
@@ -80,7 +85,8 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "LEFT JOIN ( " +
                             "   SELECT contract_id, " +
                             "          SUM(interest_amount) AS totalInterest, " +
-                            "          SUM(warehouse_daily_fee) AS totalWarehouseFee " +
+                            "          SUM(warehouse_daily_fee) AS totalWarehouseFee ," +
+                            "          SUM(penalty_interest) AS totalPenaltyInterest " +
                             "   FROM payment_schedule " +
                             "   GROUP BY contract_id " +
                             ") ps ON ps.contract_id = pc.id " +
@@ -120,7 +126,7 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
 
                             "GROUP BY pc.id, pc.contract_code, l.loan_date, l.due_date, " +
                             "c.full_name, c.phone_number, l.loan_amount, l.status, l.follower_id, " +
-                            "ps.totalInterest, ps.totalWarehouseFee, fd.totalServiceFee, paid.totalPaid " +
+                            "ps.totalInterest, ps.totalWarehouseFee,totalPenaltyInterest, fd.totalServiceFee, paid.totalPaid " +
 
                             "HAVING (:pledgeStatus IS NULL OR " +
                             "   CASE " +
