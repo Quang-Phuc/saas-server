@@ -157,6 +157,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/api/signature").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/signatures").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/baocao/svshare").permitAll()
+                .antMatchers(HttpMethod.POST, "/api/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/**").permitAll()
                 .and().exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
                 .antMatchers("/", "/v2/api-docs", "/webjars/**", "/swagger-resources/**", "/configuration/**",
