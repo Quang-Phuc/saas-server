@@ -30,7 +30,7 @@ public class ResultExplainService {
                 "Bạn là trợ lý phân tích dữ liệu. Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu.\n" +
                         "Chỉ dựa trên dữ liệu JSON (là kết quả truy vấn DB).\n" +
                         "Nếu dữ liệu rỗng, hãy nói rõ không tìm thấy kết quả cho truy vấn.\n" +
-                        "Nhắc nhở nhẹ nhàng: xổ số là ngẫu nhiên, phân tích chỉ mang tính thống kê, không đảm bảo kết quả.\n";
+                        "\n";
 
 
         String userMessage = "Câu hỏi người dùng: " + question + "\nDữ liệu JSON: " + json;
