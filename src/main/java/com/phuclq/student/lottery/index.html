@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Lottery AI v2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#0b1220;color:#e6e9ef}
+  header{padding:16px 20px;background:#121a2b;border-bottom:1px solid #1f2a44}h1{font-size:18px;margin:0}
+  .container{display:grid;grid-template-columns:1fr 380px;gap:16px;padding:20px}
+  @media (max-width:900px){.container{grid-template-columns:1fr}}
+  .card{background:#121a2b;border:1px solid #1f2a44;border-radius:12px;overflow:hidden}
+  .card header{background:transparent;border:0;padding:12px 16px;font-weight:600}
+  .chat{display:flex;flex-direction:column;height:70vh}
+  .msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .msg{max-width:80%;padding:10px 12px;border-radius:12px;line-height:1.35;white-space:pre-wrap}
+  .me{align-self:flex-end;background:#3056d3;color:#fff}
+  .ai{align-self:flex-start;background:#101827;border:1px solid #223055}
+  .composer{display:flex;gap:8px;padding:12px;border-top:1px solid #1f2a44}
+  .composer input,.composer select{background:#0a1120;border:1px solid #273251;color:#e6e9ef;padding:10px 12px;border-radius:10px}
+  .composer input{flex:1}
+  .composer button{background:#2f55d4;color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
+  .pill{display:inline-block;padding:6px 10px;background:#0a1120;border:1px solid #283350;border-radius:999px;font-size:12px;margin-right:6px}
+  .list{padding:12px;display:grid;gap:8px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#0a1120;border:1px solid #283350;border-radius:8px}
+  small{opacity:.75}
+  .cfg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .toggle{display:flex;align-items:center;gap:6px;background:#0a1120;border:1px solid #283350;border-radius:999px;padding:6px 10px;font-size:12px}
+  .hint{opacity:.8;font-size:12px;margin-top:8px}
+  </style>
+</head>
+<body>
+<header><h1>Lottery AI v2 — Thống kê & Giải mã giấc mơ</h1></header>
+
+<div class="container">
+  <section class="card chat">
+    <header>Chatbot</header>
+    <div class="msgs" id="msgs">
+      <div class="msg ai">
+        Chọn kiểu chat: <strong>Stats</strong> (thống kê) hoặc <strong>Dream</strong> (giải mã giấc mơ).
+        Bật <em>Giải thích chi tiết</em> để nhận phân tích dài mạch lạc hơn.
+      </div>
+    </div>
+    <div class="composer">
+      <select id="type">
+        <option value="stats">Stats</option>
+        <option value="dream">Dream</option>
+      </select>
+      <input id="input" placeholder="Nhập câu hỏi...">
+      <button id="send">Gửi</button>
+    </div>
+  </section>
+
+  <aside class="card">
+    <header>Cấu hình nhanh</header>
+    <div style="padding:12px">
+      <div class="cfg">
+        <span class="pill">region:
+          <select id="region">
+            <option value="MB">MB</option>
+            <option value="MN">MN</option>
+            <option value="MT">MT</option>
+          </select>
+        </span>
+        <span class="pill">days:
+          <input id="days" type="number" value="30" min="7" max="365"
+                 style="width:70px;background:transparent;border:0;color:#e6e9ef">
+        </span>
+        <span class="pill">topK (dream):
+          <input id="topK" type="number" value="10" min="1" max="20"
+                 style="width:60px;background:transparent;border:0;color:#e6e9ef">
+        </span>
+      </div>
+
+      <div class="cfg">
+        <label class="toggle">
+          <input type="checkbox" id="verbose">
+          Giải thích chi tiết (Dream)
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="includeSql">
+          Kèm SQL (Stats)
+        </label>
+      </div>
+
+      <div class="hint" id="hint">
+        • Dream + Giải thích chi tiết: câu trả lời có mở bài → phân tích → kết luận (nêu weight, tần suất, overdue).
+      </div>
+
+      <button id="btnRecommend"
+              style="margin-top:10px;background:#1e293b;color:#e6e9ef;border:1px solid #283350;border-radius:8px;padding:8px 12px;cursor:pointer">
+        Gợi ý nhanh (Stats)
+      </button>
+    </div>
+
+    <div class="list" id="recList"></div>
+  </aside>
+</div>
+
+<script>
+const API = "http://localhost:8080";
+const msgs = document.getElementById("msgs");
+const input = document.getElementById("input");
+const typeSel = document.getElementById("type");
+const regionSel = document.getElementById("region");
+const daysInp = document.getElementById("days");
+const topKInp = document.getElementById("topK");
+const verboseChk = document.getElementById("verbose");
+const includeSqlChk = document.getElementById("includeSql");
+const hint = document.getElementById("hint");
+
+typeSel.addEventListener("change", () => {
+  const isDream = typeSel.value === "dream";
+  input.placeholder = isDream
+    ? "Nhập mô tả giấc mơ (vd: mơ thấy rắn cắn)..."
+    : "Nhập câu hỏi thống kê (vd: lô 2 số 30 ngày MB)";
+  verboseChk.disabled = !isDream;
+  verboseChk.closest("label").style.opacity = isDream ? "1" : "0.5";
+  includeSqlChk.disabled = isDream; // chỉ dành cho Stats
+  includeSqlChk.closest("label").style.opacity = isDream ? "0.5" : "1";
+  hint.textContent = isDream
+    ? "• Dream + Giải thích chi tiết: câu trả lời có mở bài → phân tích → kết luận (nêu weight, tần suất, overdue)."
+    : "• Stats: có thể bật 'Kèm SQL' để xem câu truy vấn sinh ra.";
+});
+typeSel.dispatchEvent(new Event("change"));
+
+function pushMsg(t, who = "me") {
+  const d = document.createElement("div");
+  d.className = "msg " + (who === "me" ? "me" : "ai");
+  d.textContent = t;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+  pushMsg(text, "me");
+  input.value = "";
+
+  const isDream = typeSel.value === "dream";
+  const payload = {
+    message: text,
+    type: typeSel.value,
+    region: regionSel.value,
+    days: parseInt(daysInp.value || "30"),
+    topK: parseInt(topKInp.value || "10")
+  };
+  if (isDream) {
+    payload.verbose = !!verboseChk.checked; // giải thích dài
+  } else {
+    payload.includeSql = !!includeSqlChk.checked; // trả SQL nếu cần
+  }
+
+  try {
+    const res = await fetch(API + "/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    // Hiển thị answer trước
+    pushMsg(data.answer || JSON.stringify(data, null, 2), "ai");
+
+    // Nếu Stats + includeSql: đính kèm SQL ở message riêng cho dễ đọc
+    if (data.type === "stats" && data.sql) {
+      pushMsg("[SQL]\n" + data.sql, "ai");
+    }
+  } catch (e) {
+    pushMsg("[Lỗi gọi API chat] " + e.message, "ai");
+  }
+}
+
+document.getElementById("send").addEventListener("click", send);
+input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+
+async function fetchRecommend() {
+  const region = regionSel.value;
+  const days = daysInp.value;
+  const k = 10;
+  const list = document.getElementById("recList");
+  list.innerHTML = "<small>Đang tải...</small>";
+  try {
+    const res = await fetch(`${API}/api/lottery/recommend?region=${region}&days=${days}&k=${k}`);
+    const data = await res.json();
+    list.innerHTML = "";
+    data.forEach((row, i) => {
+      const d = document.createElement("div");
+      d.className = "row";
+      const score = (row.score != null) ? Number(row.score).toFixed(3) : "—";
+      const freqKey = "freqIn" + days + "Days";
+      const freq = row[freqKey] ?? row.freq ?? "—";
+      d.innerHTML = `
+        <div><strong>${i + 1}. ${row.n2}</strong></div>
+        <div><small>freq${days}: ${freq} • score: ${score}</small></div>`;
+      list.appendChild(d);
+    });
+    if (data.length === 0) list.innerHTML = "<small>Chưa có dữ liệu. Hãy nạp kết quả trước.</small>";
+  } catch (e) {
+    list.innerHTML = "<small>Lỗi: " + e.message + "</small>";
+  }
+}
+document.getElementById("btnRecommend").addEventListener("click", fetchRecommend);
+</script>
+</body>
+</html>
