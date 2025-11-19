@@ -39,10 +39,10 @@ public class VietlottRealtimeService {
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
         // Kiểm tra realtime tất cả loại phổ biến
-        fetchByProductAndDate("mega645", today);
-        fetchByProductAndDate("power655", today);
-        fetchByProductAndDate("max3d", today);
-        fetchByProductAndDate("max4d", today);
+        fetchByProductAndDate("mega645", "16/11/2025");
+        fetchByProductAndDate("power655", "16/11/2025");
+        fetchByProductAndDate("max3d", "16/11/2025");
+        fetchByProductAndDate("max4d", "16/11/2025");
         // Keno để hàm 19h lấy 1 lần là đủ
     }
 
@@ -63,18 +63,19 @@ public class VietlottRealtimeService {
     // Hàm công khai: Gọi thủ công bất kỳ lúc nào
     // Ví dụ: vietlottService.fetchByProductAndDate("mega645", "19/11/2025");
     // ==================================================================
-    public void fetchByProductAndDate(String productCode, String dateDDMMYYYY) {
+    // Hàm công khai để gọi thủ công hoặc realtime
+    public void fetchByProductAndDate(String productCode, String dateDDMMYYYY) {  // date dạng "19/11/2025"
         String productName = getProductName(productCode);
 
-        String url = String.format(
-                "https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number/%s?date=%s",
-                getProductId(productCode),
-                dateDDMMYYYY.replace("/", "%2F")
-        );
+        // ĐỔI FORMAT NGÀY THÀNH MM-dd-yyyy (bắt buộc của Vietlott 2025)
+        String[] parts = dateDDMMYYYY.split("/");
+        String vietlottDate = parts[1] + "-" + parts[0] + "-" + parts[2];  // 11-19-2025
+
+        String url = "https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number/" +
+                getProductId(productCode) + "?date=" + vietlottDate;
 
         String key = productName + "_" + dateDDMMYYYY;
         if (key.equals(lastProcessedKey)) {
-            log.info("Đã xử lý trước đó: {} ngày {}", productName, dateDDMMYYYY);
             return;
         }
 
