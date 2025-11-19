@@ -50,6 +50,13 @@ public class PaymentSchedule extends Auditable<String> {
     @Column(name = "warehouse_daily_fee")
     private BigDecimal warehouseDailyFee;
 
+    // PaymentSchedule.java
+    @Column(name = "overdue_days")
+    private Integer overdueDays;
+
+    @Column(name = "penalty_interest", precision = 15, scale = 0)
+    private BigDecimal penaltyInterest;
+
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_schedule_id", insertable = false, updatable = false)

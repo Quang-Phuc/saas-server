@@ -58,6 +58,8 @@ public interface PledgeContractListResponse {
     /** Số tiền còn lại chưa thanh toán (totalReceivable - totalPaid) */
     BigDecimal getRemainingAmount();
 
+    BigDecimal getTotalPenaltyInterest();
+
     // === CŨ: ĐÃ ĐƯỢC THAY THẾ BỞI remainingAmount ===
     // @Deprecated
     // BigDecimal getRemainingPrincipal();

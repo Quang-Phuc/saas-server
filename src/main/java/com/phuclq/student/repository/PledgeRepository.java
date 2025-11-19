@@ -30,52 +30,45 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "GROUP_CONCAT(DISTINCT ca.asset_name SEPARATOR ', ') AS assetName, " +
                             "l.loan_amount AS loanAmount, " +
 
-                            "COALESCE(SUM(ps.interest_amount), 0) AS totalInterest, " +
-                            "COALESCE(SUM(ps.warehouse_daily_fee), 0) AS totalWarehouseFee, " +
-                            "COALESCE(SUM(CASE " +
-                            "   WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
-                            "   WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) " +
-                            "   ELSE 0 END), 0) AS totalServiceFee, " +
+                            "COALESCE(ps.totalInterest, 0) AS totalInterest, " +
+                            "COALESCE(ps.totalWarehouseFee, 0) AS totalWarehouseFee, " +
+                            "COALESCE(ps.totalPenaltyInterest, 0) AS totalPenaltyInterest, " +
+                            "COALESCE(fd.totalServiceFee, 0) AS totalServiceFee, " +
 
-                            "(l.loan_amount + " +
-                            " COALESCE(SUM(ps.interest_amount), 0) + " +
-                            " COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
-                            " COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
-                            "                  WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
+                            "(l.loan_amount " +
+                            " + COALESCE(ps.totalInterest, 0) " +
+                            " + COALESCE(ps.totalWarehouseFee, 0) " +
+                            " + COALESCE(ps.totalPenaltyInterest, 0) " +
+                            " + COALESCE(fd.totalServiceFee, 0)" +
                             ") AS totalReceivable, " +
 
-                            "COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
-                            "   ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee " +
-                            "END), 0) AS totalPaid, " +
+                            "COALESCE(paid.totalPaid, 0) AS totalPaid, " +
 
-                            "(l.loan_amount + " +
-                            " COALESCE(SUM(ps.interest_amount), 0) + " +
-                            " COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
-                            " COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
-                            "                  WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
-                            " - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
-                            "   ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee END), 0)" +
+                            "(l.loan_amount " +
+                            " + COALESCE(ps.totalInterest, 0) " +
+                            " + COALESCE(ps.totalWarehouseFee, 0) " +
+                            " + COALESCE(ps.totalPenaltyInterest, 0) " +
+                            " + COALESCE(fd.totalServiceFee, 0) " +
+                            " - COALESCE(paid.totalPaid, 0)" +
                             ") AS remainingAmount, " +
 
                             "CASE " +
                             "   WHEN l.status = 'CLOSED' THEN 'DA_DONG' " +
                             "   WHEN l.due_date < CURDATE() AND ( " +
-                            "       l.loan_amount + " +
-                            "       COALESCE(SUM(ps.interest_amount), 0) + " +
-                            "       COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
-                            "       COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
-                            "                        WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
-                            "       - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
-                            "           ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee END), 0)" +
+                            "       (l.loan_amount " +
+                            "        + COALESCE(ps.totalInterest, 0) " +
+                            "        + COALESCE(ps.totalWarehouseFee, 0) " +
+                            "        + COALESCE(ps.totalPenaltyInterest, 0) " +
+                            "        + COALESCE(fd.totalServiceFee, 0) " +
+                            "        - COALESCE(paid.totalPaid, 0)) " +
                             "   ) > 0 THEN 'QUA_HAN' " +
                             "   WHEN ( " +
-                            "       l.loan_amount + " +
-                            "       COALESCE(SUM(ps.interest_amount), 0) + " +
-                            "       COALESCE(SUM(ps.warehouse_daily_fee), 0) + " +
-                            "       COALESCE(SUM(CASE WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
-                            "                        WHEN fd.value_type = 'PERCENT' THEN (l.loan_amount * fd.value / 100) ELSE 0 END), 0)" +
-                            "       - COALESCE(SUM(CASE WHEN ps.status = 'PAID' THEN " +
-                            "           ps.principal_amount + ps.interest_amount + ps.warehouse_daily_fee END), 0)" +
+                            "       l.loan_amount " +
+                            "       + COALESCE(ps.totalInterest, 0) " +
+                            "       + COALESCE(ps.totalWarehouseFee, 0) " +
+                            "       + COALESCE(ps.totalPenaltyInterest, 0) " +
+                            "       + COALESCE(fd.totalServiceFee, 0) " +
+                            "       - COALESCE(paid.totalPaid, 0) " +
                             "   ) <= 0 THEN 'DA_TRA_HET' " +
                             "   ELSE 'DANG_VAY' " +
                             "END AS pledgeStatus, " +
@@ -85,9 +78,41 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "FROM pledge_contracts pc " +
                             "JOIN loans l ON pc.loan_id = l.id " +
                             "JOIN customer c ON pc.customer_id = c.id " +
+
                             "LEFT JOIN collateral_asset ca ON ca.contract_id = pc.id " +
-                            "LEFT JOIN payment_schedule ps ON ps.contract_id = pc.id " +
-                            "LEFT JOIN fee_details fd ON fd.contract_id = pc.id " +
+
+                            // SUBQUERY CHỐNG NHÂN BẢN LÃI VÀ PHÍ KHO BÃI
+                            "LEFT JOIN ( " +
+                            "   SELECT contract_id, " +
+                            "          SUM(interest_amount) AS totalInterest, " +
+                            "          SUM(warehouse_daily_fee) AS totalWarehouseFee ," +
+                            "          SUM(penalty_interest) AS totalPenaltyInterest " +
+                            "   FROM payment_schedule " +
+                            "   GROUP BY contract_id " +
+                            ") ps ON ps.contract_id = pc.id " +
+
+                            // SUBQUERY CHỐNG NHÂN BẢN FEE DETAILS
+                            "LEFT JOIN ( " +
+                            "   SELECT fd.contract_id, " +
+                            "          SUM( CASE " +
+                            "               WHEN fd.value_type = 'AMOUNT' THEN fd.value " +
+                            "               WHEN fd.value_type = 'PERCENT' THEN (l2.loan_amount * fd.value / 100) " +
+                            "               ELSE 0 END " +
+                            "          ) AS totalServiceFee " +
+                            "   FROM fee_details fd " +
+                            "   JOIN pledge_contracts pc2 ON pc2.id = fd.contract_id " +
+                            "   JOIN loans l2 ON l2.id = pc2.loan_id " +
+                            "   GROUP BY fd.contract_id " +
+                            ") fd ON fd.contract_id = pc.id " +
+
+                            // SUBQUERY CHỐNG NHÂN BẢN totalPaid
+                            "LEFT JOIN ( " +
+                            "   SELECT contract_id, " +
+                            "          SUM(principal_amount + interest_amount + warehouse_daily_fee) AS totalPaid " +
+                            "   FROM payment_schedule " +
+                            "   WHERE status = 'PAID' " +
+                            "   GROUP BY contract_id " +
+                            ") paid ON paid.contract_id = pc.id " +
 
                             "WHERE (:keyword IS NULL OR LOWER(c.full_name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
                             "   OR c.phone_number LIKE CONCAT('%', :keyword, '%') " +
@@ -100,9 +125,9 @@ public interface PledgeRepository extends JpaRepository<PledgeContract, Long> {
                             "AND (:follower IS NULL OR l.follower_id = :follower) " +
 
                             "GROUP BY pc.id, pc.contract_code, l.loan_date, l.due_date, " +
-                            "c.full_name, c.phone_number, l.loan_amount, l.status, l.follower_id " +
+                            "c.full_name, c.phone_number, l.loan_amount, l.status, l.follower_id, " +
+                            "ps.totalInterest, ps.totalWarehouseFee,totalPenaltyInterest, fd.totalServiceFee, paid.totalPaid " +
 
-                            // DÙNG HAVING ĐỂ LỌC remainingAmount
                             "HAVING (:pledgeStatus IS NULL OR " +
                             "   CASE " +
                             "       WHEN :pledgeStatus = 'DANG_VAY' THEN (remainingAmount > 0 AND l.due_date >= CURDATE()) " +

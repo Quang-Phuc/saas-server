@@ -37,24 +37,42 @@ public class InterestServiceImpl implements InterestService {
     }
 
     @Override
-    public void payInterest(Long contractId, PayInterestRequest req) {
+    public String payInterest(Long contractId, PayInterestRequest req) {
 
         BigDecimal remaining = req.getAmount();
         if (remaining == null || remaining.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessHandleException("SS900"); // Invalid amount
+            throw new BusinessHandleException("SS901"); // Invalid amount
         }
 
         List<PaymentSchedule> schedules =
                 paymentScheduleRepository.findByContractIdOrderByPeriodNumberAsc(contractId);
 
         if (schedules.isEmpty()) {
-            throw new BusinessHandleException("SS901"); // Contract not found
+            throw new BusinessHandleException("SS004");
         }
 
+        // === TÌM KỲ ĐƯỢC CHỌN ===
+        PaymentSchedule targetSchedule = schedules.stream()
+                .filter(s -> s.getPeriodNumber().equals(req.getPeriodNumber()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessHandleException("SS901")); // Kỳ không tồn tại
+
+        // === KIỂM TRA KỲ ĐÃ ĐÓNG ĐỦ CHƯA ===
+        BigDecimal paidSoFar = targetSchedule.getTransactions()
+                .stream()
+                .map(PaymentScheduleTransaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal need = targetSchedule.getTotalAmount().subtract(paidSoFar);
+
+        if (need.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessHandleException("SS004");
+        }
+
+        // === TIẾP TỤC XỬ LÝ NHƯ CŨ ===
         boolean startAllocating = false;
         int currentIndex = 0;
 
-        // Tìm kỳ bắt đầu
         for (int i = 0; i < schedules.size(); i++) {
             if (schedules.get(i).getPeriodNumber().equals(req.getPeriodNumber())) {
                 startAllocating = true;
@@ -64,19 +82,19 @@ public class InterestServiceImpl implements InterestService {
         }
 
         if (!startAllocating) {
-            throw new BusinessHandleException("SS902"); // Kỳ không tồn tại
+            throw new BusinessHandleException("SS004");
         }
 
         // === BƯỚC 1: THANH TOÁN TỪ KỲ HIỆN TẠI TRỞ ĐI ===
         for (int i = currentIndex; i < schedules.size() && remaining.compareTo(BigDecimal.ZERO) > 0; i++) {
             PaymentSchedule schedule = schedules.get(i);
 
-            BigDecimal paidSoFar = schedule.getTransactions()
+             paidSoFar = schedule.getTransactions()
                     .stream()
                     .map(PaymentScheduleTransaction::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal need = schedule.getTotalAmount().subtract(paidSoFar);
+             need = schedule.getTotalAmount().subtract(paidSoFar);
 
             if (need.compareTo(BigDecimal.ZERO) <= 0) {
                 schedule.setStatus("PAID");
@@ -127,6 +145,7 @@ public class InterestServiceImpl implements InterestService {
             }
             paymentScheduleRepository.save(lastSchedule);
         }
+        return "Thành coong";
     }
 
     private void createTransaction(PaymentSchedule schedule, BigDecimal amount, PayInterestRequest req) {

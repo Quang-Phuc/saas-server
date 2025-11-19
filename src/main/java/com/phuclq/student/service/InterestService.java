@@ -8,5 +8,5 @@ public interface InterestService {
 
     public Page<PaymentSchedule> getDetails(Long pledgeId, int page, int size, String sort, String order);
 
-    void payInterest(Long contractId, PayInterestRequest request);
+    String payInterest(Long contractId, PayInterestRequest request);
 }

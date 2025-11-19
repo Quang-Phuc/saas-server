@@ -29,7 +29,7 @@ public class InterestController {
     @PostMapping("/{contractId}/pay-interest")
     public ResponseEntity<?> payInterest(@PathVariable Long contractId, @RequestBody PayInterestRequest request) {
 
-        interestService.payInterest(contractId, request);
-        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse("Đóng lãi thành công").getResponse();
+        ;
+        return restEntityRes.setHttpStatus(HttpStatus.OK).setDataResponse(interestService.payInterest(contractId, request)).getResponse();
     }
 }
