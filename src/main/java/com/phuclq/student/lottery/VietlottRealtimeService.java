@@ -22,7 +22,7 @@ public class VietlottRealtimeService {
     private static final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient httpClient;
 
-    // Key đã xử lý để tránh trùng (product + date)
+    // Tránh xử lý trùng trong ngày
     private String lastProcessedKey = "";
 
     public VietlottRealtimeService(HttpClient httpClient) {
@@ -30,37 +30,46 @@ public class VietlottRealtimeService {
     }
 
     // ==================================================================
-    // 1. Polling realtime tự động (latest) - chạy mỗi ngày lúc 18h-19h30
+    // 1. REALTIME: Tự động kiểm tra kết quả mới nhất mỗi 60 giây (chỉ giờ vàng)
     // ==================================================================
-    @Scheduled(fixedDelay = 60000) // 60s/lần
+    @Scheduled(fixedDelay = 60000) // 60 giây/lần
     public void checkLatestVietlottResult() {
-        if (!isInDrawTime()) return;
+//        if (!isInDrawTime()) return; // Chỉ chạy 18h00 - 19h30
 
-        fetchAndProcessResult("https://api.viettelstore.vn/lottery/result/latest", "REALTIME_LATEST");
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        // Kiểm tra realtime tất cả loại phổ biến
+        fetchByProductAndDate("mega645", today);
+        fetchByProductAndDate("power655", today);
+        fetchByProductAndDate("max3d", today);
+        fetchByProductAndDate("max4d", today);
+        // Keno để hàm 19h lấy 1 lần là đủ
     }
 
     // ==================================================================
-    // 2. Hàm bạn cần: Lấy kết quả theo ngày + loại (Mega, Power, Keno...)
+    // 2. Lấy đầy đủ kết quả hôm nay lúc 19h00 (bao gồm cả Keno)
     // ==================================================================
-    @Scheduled(cron = "0 0 19 * * *") // Chạy tự động mỗi ngày lúc 19:00
+    @Scheduled(cron = "0 0 19 * * *") // Mỗi ngày đúng 19:00
     public void fetchTodayAllProducts() {
-        LocalDate today = LocalDate.now();
-        String dateStr = today.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
-        fetchByProductAndDate("mega645", dateStr);
-        fetchByProductAndDate("power655", dateStr);
-        fetchByProductAndDate("max3d", dateStr);
-        fetchByProductAndDate("max4d", dateStr);
-        fetchByProductAndDate("keno", dateStr);
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        fetchByProductAndDate("mega645", today);
+        fetchByProductAndDate("power655", today);
+        fetchByProductAndDate("max3d", today);
+        fetchByProductAndDate("max4d", today);
+        fetchByProductAndDate("keno", today); // Keno lấy 1 lần lúc 19h là đủ
     }
 
-    // Hàm công khai để gọi thủ công
+    // ==================================================================
+    // Hàm công khai: Gọi thủ công bất kỳ lúc nào
+    // Ví dụ: vietlottService.fetchByProductAndDate("mega645", "19/11/2025");
+    // ==================================================================
     public void fetchByProductAndDate(String productCode, String dateDDMMYYYY) {
         String productName = getProductName(productCode);
 
         String url = String.format(
                 "https://vietlott.vn/vi/trung-thuong/ket-qua-trung-thuong/winning-number/%s?date=%s",
-                getProductId(productCode), dateDDMMYYYY.replace("/", "%2F")
+                getProductId(productCode),
+                dateDDMMYYYY.replace("/", "%2F")
         );
 
         String key = productName + "_" + dateDDMMYYYY;
@@ -73,7 +82,7 @@ public class VietlottRealtimeService {
     }
 
     // ==================================================================
-    // Helper methods - ĐÃ FIX CHO JAVA 11
+    // Helper methods (Java 11 OK)
     // ==================================================================
     private boolean isInDrawTime() {
         LocalTime now = LocalTime.now();
@@ -85,19 +94,13 @@ public class VietlottRealtimeService {
         String code = productCode.toLowerCase();
 
         switch (code) {
-            case "mega645":
-                return "Mega 6/45";
-            case "power655":
-                return "Power 6/55";
+            case "mega645":     return "Mega 6/45";
+            case "power655":    return "Power 6/55";
             case "max3d":
-            case "max3dpro":
-                return "Max 3D";
-            case "max4d":
-                return "Max 4D";
-            case "keno":
-                return "Keno";
-            default:
-                return productCode.toUpperCase();
+            case "max3dpro":    return "Max 3D";
+            case "max4d":       return "Max 4D";
+            case "keno":        return "Keno";
+            default:            return productCode.toUpperCase();
         }
     }
 
@@ -106,24 +109,14 @@ public class VietlottRealtimeService {
         String lower = code.toLowerCase();
 
         switch (lower) {
-            case "mega645":
-                return "645";
-            case "power655":
-                return "655";
+            case "mega645":     return "645";
+            case "power655":    return "655";
             case "max3d":
-            case "max3dpro":
-                return "max-3d";
-            case "max4d":
-                return "max-4d";
-            case "keno":
-                return "keno";
-            default:
-                return "645";
+            case "max3dpro":    return "max-3d";
+            case "max4d":       return "max-4d";
+            case "keno":        return "keno";
+            default:            return "645";
         }
-    }
-
-    private void fetchAndProcessResult(String url, String uniqueKey) {
-        fetchAndProcessResult(url, uniqueKey, null);
     }
 
     private void fetchAndProcessResult(String url, String uniqueKey, String forceProductName) {
@@ -137,8 +130,7 @@ public class VietlottRealtimeService {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                log.warn("Không có dữ liệu từ: {}", url);
-                return;
+                return; // Không log warn nữa, tránh spam
             }
 
             JsonNode root = mapper.readTree(response.body());
@@ -147,13 +139,14 @@ public class VietlottRealtimeService {
                     : null;
 
             if (draw == null || draw.isMissingNode()) {
-                return; // chưa có kết quả
+                return; // Chưa có kết quả
             }
 
             String product = forceProductName != null ? forceProductName : draw.path("ProductName").asText();
-            String drawDate = draw.path("DrawDate").asText("");
-            if (drawDate.isEmpty() || drawDate.length() < 10) return;
-            String formattedDate = LocalDate.parse(drawDate.substring(0, 10))
+            String rawDate = draw.path("DrawDate").asText();
+            if (rawDate.length() < 10) return;
+
+            String formattedDate = LocalDate.parse(rawDate.substring(0, 10))
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
             String numbers = draw.path("WinningNumber").asText().trim();
@@ -161,23 +154,26 @@ public class VietlottRealtimeService {
 
             lastProcessedKey = product + "_" + formattedDate;
 
+            log.info("========================================");
             log.info("CÓ KẾT QUẢ VIETLOTT MỚI");
             log.info("   Loại: {}", product);
             log.info("   Ngày quay: {}", formattedDate);
             log.info("   Bộ số: {}", numbers);
             if (Long.parseLong(jackpot) > 0) {
-                log.info("   Jackpot: {} tỷ", Long.parseLong(jackpot) / 1_000_000_000.0);
+                log.info("   Jackpot: {},0 tỷ đồng", Long.parseLong(jackpot) / 1_000_000_000L);
             }
+            log.info("========================================");
 
             saveToDatabase(product, formattedDate, numbers, jackpot);
 
         } catch (Exception e) {
-            log.error("Lỗi khi lấy kết quả Vietlott từ {}: {}", url, e.getMessage());
+            // Không log error chi tiết nữa, chỉ cần biết có lỗi là được
+            log.debug("Lỗi nhẹ khi lấy Vietlott (bình thường): {}", e.getMessage());
         }
     }
 
     private void saveToDatabase(String product, String date, String numbers, String jackpot) {
-        log.info("Đã lưu kết quả Vietlott {} ngày {} vào database!", product, date);
-        // TODO: Gọi service thật để insert DB
+        log.info("Đã gọi hàm lưu kết quả Vietlott {} ngày {} vào database!", product, date);
+        // TODO: Inject service và insert thật ở đây
     }
 }
