@@ -34,9 +34,9 @@ public class XosoRealtimePollingService {
     @Scheduled(fixedDelay = 30000) // 30 giây/lần
     public void checkNewResult() {
         LocalTime now = LocalTime.now();
-        if (now.isBefore(LocalTime.of(18, 0)) || now.isAfter(LocalTime.of(19, 0))) {
-            return; // ngoài giờ quay thì nghỉ
-        }
+//        if (now.isBefore(LocalTime.of(18, 0)) || now.isAfter(LocalTime.of(19, 0))) {
+//            return; // ngoài giờ quay thì nghỉ
+//        }
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
