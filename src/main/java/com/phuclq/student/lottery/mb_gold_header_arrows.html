@@ -6,6 +6,21 @@
   <title>Xổ Số Thần Đèn — Gold Ribbon + Chatbox + Tabs Tách Riêng</title>
   <meta name="color-scheme" content="dark">
   <style>
+
+    /* Hamburger Menu */
+    .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);opacity:0;visibility:hidden;transition:.3s;z-index:98}
+    .menu-overlay.show{opacity:1;visibility:visible}
+    .side-menu{position:fixed;top:0;left:-320px;width:300px;height:100%;background:#0c0c0c;border-right:1px solid var(--border);box-shadow:0 0 40px rgba(0,0,0,.8);transition:.32s ease;z-index:99;display:grid;grid-template-rows:auto 1fr}
+    .side-menu.show{left:0}
+    .menu-header{display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--gold);color:#111;font-weight:900}
+    .close-menu{width:40px;height:40px;border-radius:10px;background:#111;color:var(--gold);border:none;font-size:20px;cursor:pointer}
+    .menu-list{display:grid;gap:2px;padding:12px;overflow:auto}
+    .menu-item{display:flex;gap:14px;align-items:center;padding:14px 16px;background:#111;border-radius:12px;transition:.2s;cursor:pointer}
+    .menu-item:hover{background:#161616;transform:translateX(6px)}
+    .m-icon{font-size:28px}
+    .m-title{font-weight:800;font-size:16px}
+    .m-sub{font-size:13px;color:var(--muted);margin-top:2px}
+
     :root{
       --bg:#0a0a0a; --panel:#111214; --glass:rgba(255,255,255,.06);
       --text:#FAFAFA; --muted:#D7D7D7; --gold:#FFD54A; --gold-2:#FFC107; --gold-3:#FFB300;
@@ -142,7 +157,46 @@
     <button class="tabs-arrow tabs-right" id="tbRight2">▶</button>
   </div>
 </header>
-
+<!-- Thêm vào ngay sau </header> hoặc trước <main> đều được -->
+<!-- Hamburger Menu Overlay -->
+<div class="menu-overlay" id="menuOverlay"></div>
+<div class="side-menu" id="sideMenu">
+  <div class="menu-header">
+    <div class="logo">MB</div>
+    <div style="font-weight:900;font-size:18px">Menu Thần Đèn</div>
+    <button class="close-menu" id="closeMenu">✕</button>
+  </div>
+  <div class="menu-list">
+    <a href="#pt" class="menu-item">
+      <div class="m-icon">🧭</div>
+      <div>
+        <div class="m-title">Dự Đoán Số Phong Thuỷ</div>
+        <div class="m-sub">Theo tuổi, mệnh, ngũ hành</div>
+      </div>
+    </a>
+    <a href="#ai" class="menu-item">
+      <div class="m-icon">🤖</div>
+      <div>
+        <div class="m-title">Dự Đoán Xổ Số Bằng AI</div>
+        <div class="m-sub">Thống kê + machine learning</div>
+      </div>
+    </a>
+    <a href="#dream" class="menu-item">
+      <div class="m-icon">💭</div>
+      <div>
+        <div class="m-title">Dự Đoán Số Qua Giấc Mơ</div>
+        <div class="m-sub">Từ điển giấc mơ + AI gợi ý</div>
+      </div>
+    </a>
+    <a href="#near" class="menu-item">
+      <div class="m-icon">📍</div>
+      <div>
+        <div class="m-title">Điểm Mua Vé Số Gần Tôi</div>
+        <div class="m-sub">Tìm đại lý gần nhất (bật GPS)</div>
+      </div>
+    </a>
+  </div>
+</div>
 <main class="container">
   <section class="card">
     <header><strong>XSMB — Thứ Tư, 19/11/2025 • Đang quay</strong></header>
@@ -205,6 +259,21 @@
   setupArrows('regionTabs', 'tbLeft1', 'tbRight1');
   setupArrows('dayTabs', 'tbLeft2', 'tbRight2');
 
+  // Hamburger Menu
+  const hamb = document.querySelector('.hamb');
+  const overlay = document.getElementById('menuOverlay');
+  const menu = document.getElementById('sideMenu');
+  const closeBtn = document.getElementById('closeMenu');
+
+  hamb.onclick = () => {
+    overlay.classList.add('show');
+    menu.classList.add('show');
+  };
+  closeBtn.onclick = overlay.onclick = () => {
+    overlay.classList.remove('show');
+    menu.classList.remove('show');
+  };
+
   // LIVE + kết quả
   const ORDER = ["DB","G1","G2","G3","G4","G5","G6","G7"];
   const STATE = {current:"G5",prizes:{DB:["837291"],G1:["74193"],G2:["28560","91472"],G3:["23456","78901","22344","55678","99012","33445"],G4:["6032","9182","5578","1290"],G5:["7453","2231","9910","— —","— —","— —"],G6:["•••","•••","•••"],G7:["••","••","••","••"]}};
@@ -232,6 +301,8 @@
   function renderPast(){const p=document.getElementById('past');p.innerHTML='';[D1,D2,D3].forEach((d,i)=>{const t=['Hôm qua','2 ngày trước','3 ngày trước'][i];const box=el('div','',`<div style="font-weight:800;color:var(--gold);margin:8px 0">${t}</div>`);const r=el('div');renderRows(r,d);box.appendChild(r);p.appendChild(box);});}
 
   renderRows(document.getElementById('liveWrap'),STATE,true); updateHeads(); renderPast();
+
+
 
   // Chat
   const fab=document.getElementById('fab'),chat=document.getElementById('chat');
