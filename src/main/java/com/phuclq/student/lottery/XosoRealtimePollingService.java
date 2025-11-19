@@ -1,4 +1,4 @@
-package com.phuclq.student.lottery.service;
+package com.phuclq.student.lottery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
