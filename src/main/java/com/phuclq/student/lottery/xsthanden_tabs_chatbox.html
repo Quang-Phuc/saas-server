@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xổ Số Thần Đèn — Tabs + Chatbox</title>
+<meta name="color-scheme" content="dark">
+<style>
+  :root{
+    --bg:#0a0a0a; --panel:#111214; --panel-2:#141414; --glass:rgba(255,255,255,.06);
+    --text:#FAFAFA; --muted:#D7D7D7; --gold:#FFD54A; --gold-2:#FFC107; --gold-3:#FFB300;
+    --border:#2a2a2a; --radius:16px; --shadow:0 18px 48px rgba(0,0,0,.6);
+    --ball-h:42px; --ball-gap:8px;
+    --accent:#fff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
+    background:
+      radial-gradient(900px 600px at -10% -10%, rgba(255,213,74,.10) 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 0%, rgba(255,193,7,.10) 0%, transparent 60%), var(--bg);
+    -webkit-tap-highlight-color: transparent;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* Header compact */
+  .header{position:sticky;top:0;z-index:80;background:linear-gradient(180deg, rgba(10,10,10,.96), rgba(10,10,10,.78));backdrop-filter:saturate(140%) blur(12px);border-bottom:1px solid var(--border)}
+  .header .inner{max-width:1100px;margin:0 auto;padding:10px 12px;display:flex;align-items:center;gap:12px}
+  .logo{width:36px;height:36px;border-radius:12px;background:conic-gradient(from 120deg at 50% 50%, var(--gold), var(--gold-2), var(--gold-3), var(--gold));display:grid;place-items:center;font-weight:900;color:#111;box-shadow:0 8px 24px rgba(255,213,74,.25)}
+  .brand{display:flex;gap:8px;align-items:center}
+  .title{font-weight:900;letter-spacing:.3px}
+  .hamb{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);display:grid;place-items:center}
+  .user{width:34px;height:34px;border-radius:999px;background:#1a1a1a;border:1px solid var(--border);display:grid;place-items:center}
+  .spacer{flex:1}
+
+  /* Single tabs row (regions) */
+  .tabs1{position:relative;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:#101010}
+  .tabs1 .strip{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:10px 44px;scroll-behavior:smooth}
+  .tabs1 .strip::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;font-weight:900;color:#fff;opacity:.95}
+  .tab.active{color:#111;background:linear-gradient(135deg,var(--gold),var(--gold-2));border-radius:999px;padding:6px 12px;box-shadow:0 6px 16px rgba(255,193,7,.2)}
+  .tabs-arrow{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#0f0f0f;display:grid;place-items:center;color:#fff}
+  .tabs-left{left:6px} .tabs-right{right:6px}
+
+  /* Weekday row (second line) */
+  .days{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:8px 44px 10px;background:#0f0f0f;border-bottom:1px solid var(--border)}
+  .days::-webkit-scrollbar{display:none}
+  .day{white-space:nowrap;font-weight:800;color:#ddd;border:1px solid #2e2e2e;border-radius:999px;padding:6px 12px}
+  .day.active{background:linear-gradient(135deg, rgba(255,213,74,.22), rgba(255,193,7,.16));color:#111;border-color:#3a3a3a}
+
+  /* Menu with 3 items */
+  .menu3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px;border-bottom:1px solid var(--border);background:#0f0f0f}
+  @media (max-width:760px){ .menu3{grid-template-columns:1fr} }
+  .m3{display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:14px;padding:12px;background:linear-gradient(180deg,var(--glass),transparent)}
+  .m3 .icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;font-weight:900;box-shadow:0 10px 24px rgba(255,193,7,.25)}
+  .m3 .title{font-weight:900}
+  .m3 .sub{color:#cfcfcf;font-size:12px}
+
+  /* Content cards (same as before, shortened) */
+  .container{max-width:1100px;margin:0 auto;padding:12px}
+  .card{background:linear-gradient(180deg,var(--glass),transparent),var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
+  .card header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg, rgba(255,213,74,.08), rgba(255,193,7,.05)); color:#fff}
+  .card .body{padding:12px}
+
+  .prize-row{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:16px;background:#121315;padding:10px 12px;margin-bottom:10px;position:relative}
+  .p-label{min-width:58px;text-align:center;font-weight:900;color:#fff;background:linear-gradient(135deg, rgba(255,213,74,.14), rgba(255,193,7,.08));border:1px solid #2f2f2f;border-radius:10px;padding:6px 0}
+  .p-numbers{display:flex;flex-wrap:wrap;gap:var(--ball-gap);max-height:calc(var(--ball-h)*2 + var(--ball-gap));overflow:hidden;width:100%}
+  .ball{height:var(--ball-h);padding:0 14px;display:grid;place-items:center;border-radius:12px;font-weight:900;background:linear-gradient(135deg,#1a1a1a,#101010);border:1px solid #2f2f2f;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+  .ball.big{height:54px;padding:0 18px;border-radius:14px;background:linear-gradient(135deg,#1f1f1f,#0f0f0f);border-color:#3a3a3a;font-size:20px;box-shadow:0 8px 22px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,213,74,.18)}
+  .sep{opacity:.6;color:#bdbdbd}
+  .ghost{color:#9e9e9e}
+  .shimmer{position:relative;overflow:hidden}
+  .shimmer::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.25) 18%,transparent 36%);transform:translateX(-120%);animation:shine 1.3s linear infinite}
+  @keyframes shine{to{transform:translateX(120%)}}
+  .pop{animation:pop .36s ease}
+  @keyframes pop{from{transform:scale(.85);filter:brightness(1.25)}to{transform:scale(1)}}
+  .prize-row.current{box-shadow:0 0 0 2px rgba(255,213,74,.45), 0 0 0 12px rgba(255,213,74,.18), inset 0 0 20px rgba(255,213,74,.14)}
+
+  .heads{width:100%;border-collapse:separate;border-spacing:0 10px}
+  .heads th, .heads td{font-size:14px;padding:10px;border-top:1px solid #2f2f2f;border-bottom:1px solid #2f2f2f;background:#111214}
+  .heads th:first-child, .heads td:first-child{border-left:1px solid #2f2f2f;border-top-left-radius:12px;border-bottom-left-radius:12px}
+  .heads th:last-child, .heads td:last-child{border-right:1px solid #2f2f2f;border-top-right-radius:12px;border-bottom-right-radius:12px}
+  .head-cell{font-weight:900;color:#fff;min-width:44px;text-align:center;background:linear-gradient(180deg, rgba(255,213,74,.16), rgba(255,193,7,.08));border-radius:8px}
+  .nums-cell{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{padding:6px 10px;border-radius:10px;border:1px solid #3a3a3a;background:linear-gradient(135deg,#171717,#0f0f0f);font-weight:800;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.45)}
+
+  /* Floating Chat Button */
+  .chat-fab{position:fixed;right:14px;bottom:18px;width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;display:grid;place-items:center;font-size:26px;box-shadow:0 16px 36px rgba(255,193,7,.35);z-index:90;cursor:pointer}
+  .chat-fab span{font-size:14px;font-weight:900}
+  /* Chat Panel */
+  .chat{position:fixed;right:10px;bottom:90px;width:min(520px,94vw);height:min(70vh,620px);display:none;flex-direction:column;border:1px solid var(--border);border-radius:16px;background:#0f0f0f;box-shadow:0 28px 60px rgba(0,0,0,.6);z-index:95}
+  .chat.show{display:flex}
+  .chat header{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);background:#1a1a1a}
+  .chat .ava{width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,var(--gold),var(--gold-2));display:grid;place-items:center;color:#111;font-weight:900}
+  .chat .title{font-weight:900}
+  .chat .toolbar{margin-left:auto;display:flex;gap:6px}
+  .circle{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#101010;border:1px solid #2b2b2b;color:#fff}
+  .chat .body{flex:1;overflow:auto;padding:10px;display:grid;gap:8px;background:#0d0d0d}
+  .msg{max-width:92%;padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.4;border:1px solid #2b2b2b}
+  .bot{background:#111214}
+  .me{background:linear-gradient(135deg, #212121, #181818);margin-left:auto}
+  .chat .input-wrap{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:#121212}
+  .chat input{flex:1;padding:10px 12px;border-radius:12px;border:1px solid #2e2e2e;background:#0d0d0d;color:#fff;outline:none}
+  .chat button{padding:10px 12px;border-radius:12px;border:0;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;font-weight:900}
+  .ribbon-wrap{position:relative;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:linear-gradient(180deg,#121212,#0e0e0e)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="inner">
+    <div class="hamb">☰</div>
+    <div class="brand"><div class="logo">MB</div><div class="title">Xổ Số <span style="color:var(--gold)">THẦN ĐÈN</span></div></div>
+    <div class="spacer"></div>
+    <div class="user">👤</div>
+  </div>
+    <div class="ribbon-wrap">
+    <button class="arrow-btn arrow-left" id="rbLeft">◀</button>
+    <div class="ribbon" id="ribbon">
+      <a href="#" class="item">
+        <div class="tag">XSMB</div>
+        <div class="icon">📍</div>
+        <div class="title">Điểm Mua Vé Số</div>
+        <div class="muted">Tìm đại lý gần bạn</div>
+      </a>
+      <a href="#" class="item">
+        <div class="tag">AI</div>
+        <div class="icon">💭</div>
+        <div class="title">Đoán Số Giấc Mơ <span class="badge">32</span></div>
+        <div class="muted">Từ điển + thống kê</div>
+      </a>
+      <a href="#" class="item">
+        <div class="tag">AI</div>
+        <div class="icon">💡</div>
+        <div class="title">Dự Đoán Xổ Số Bằng AI <span class="badge">17</span></div>
+        <div class="muted">Gợi ý nóng</div>
+      </a>
+      <a href="#" class="item">
+        <div class="tag">00 <span style="opacity:.8">→</span> 99</div>
+        <div class="icon">🪄</div>
+        <div class="title">Lọc Số Sáng Nhất <span class="badge">79</span></div>
+        <div class="muted">Theo ngày/tuần</div>
+      </a>
+      <a href="#" class="item">
+        <div class="tag">Phong Thuỷ</div>
+        <div class="icon">🧭</div>
+        <div class="title">Số Phong Thuỷ <span class="badge">35</span></div>
+        <div class="muted">Mạng & tuổi</div>
+      </a>
+    </div>
+    <button class="arrow-btn arrow-right" id="rbRight">▶</button>
+  </div>
+
+  <!-- Tabs row 1: regions -->
+  <div class="tabs1">
+    <button class="tabs-arrow tabs-left" id="tbLeft">◀</button>
+    <div class="strip" id="tabs1">
+      <a href="#" class="tab active">XSMB</a>
+      <a href="#" class="tab">XSMN</a>
+      <a href="#" class="tab">XSMT</a>
+      <a href="#" class="tab">VIETLOTT</a>
+    </div>
+    <button class="tabs-arrow tabs-right" id="tbRight">▶</button>
+  </div>
+  <!-- Tabs row 2: weekdays -->
+  <div class="days" id="days">
+    <span class="day active">T2</span><span class="day">T3</span><span class="day">T4</span><span class="day">T5</span><span class="day">T6</span><span class="day">T7</span><span class="day">CN</span>
+  </div>
+
+  <!-- Menu 3 items -->
+  <div class="menu3">
+    <a class="m3" href="#pt">
+      <div class="icon">🧭</div>
+      <div><div class="title">Dự Đoán Số Phong Thuỷ</div><div class="sub">Theo mạng, ngũ hành, tuổi</div></div>
+    </a>
+    <a class="m3" href="#ai">
+      <div class="icon">🤖</div>
+      <div><div class="title">Dự Đoán Xổ Số Bằng AI</div><div class="sub">Thống kê + mô hình</div></div>
+    </a>
+    <a class="m3" href="#dream">
+      <div class="icon">💭</div>
+      <div><div class="title">Dự Đoán Số Qua Giấc Mơ</div><div class="sub">Từ điển giấc mơ + AI</div></div>
+    </a>
+  </div>
+</header>
+
+<main class="container">
+  <section class="card">
+    <header>
+      <strong>XSMB — Hôm nay (đang quay)</strong>
+      <div class="muted">Shimmer: sắp quay • Pop-in: vừa ra • Glow: giải hiện tại</div>
+    </header>
+    <div class="body" id="liveWrap"></div>
+  </section>
+
+  <section class="card">
+    <header><strong>Thống kê đầu (hôm nay)</strong><span class="muted">Từ số đã về</span></header>
+    <div class="body">
+      <table class="heads" id="headsTable">
+        <thead><tr><th class="head-cell">Đầu</th><th>Lô tô</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- Floating Chat -->
+<div class="chat-fab" id="fab" title="Chatbot Thần Đèn">🧞</div>
+<div class="chat" id="chat">
+  <header>
+    <div class="ava">🧞</div>
+    <div class="title">Xổ Số Thần Đèn</div>
+    <div class="toolbar">
+      <div class="circle" id="minimize">—</div>
+      <div class="circle" id="close">✕</div>
+    </div>
+  </header>
+  <div class="body" id="chatBody">
+    <div class="msg bot">Xin chào Anh/Chị! Em là trợ lý AI của Xổ số Thần Đèn 👋</div>
+    <div class="msg bot">Em sẵn sàng hỗ trợ: giải mã giấc mơ, soi cầu thống kê, tra cứu kết quả…</div>
+  </div>
+  <div class="input-wrap">
+    <input id="chatInput" placeholder="Nhập câu hỏi...">
+    <button id="sendBtn">Gửi</button>
+  </div>
+</div>
+
+<script>
+// Tabs arrows logic
+function setupArrows(elId, leftId, rightId){
+  const el = document.getElementById(elId);
+  const L = document.getElementById(leftId);
+  const R = document.getElementById(rightId);
+  function update(){
+    const max = el.scrollWidth - el.clientWidth - 1;
+    L.style.opacity = el.scrollLeft > 0 ? 1 : .35;
+    R.style.opacity = el.scrollLeft < max ? 1 : .35;
+  }
+  if (L && R && el){
+    L.addEventListener('click', ()=>{ el.scrollBy({left:-220, behavior:'smooth'}); setTimeout(update, 300); });
+    R.addEventListener('click', ()=>{ el.scrollBy({left:220, behavior:'smooth'}); setTimeout(update, 300); });
+    el.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    update();
+  }
+}
+setupArrows('tabs1','tbLeft','tbRight');
+
+// Weekday active toggle
+document.getElementById('days').addEventListener('click', (e)=>{
+  if (!e.target.classList.contains('day')) return;
+  document.querySelectorAll('.day').forEach(x=>x.classList.remove('active'));
+  e.target.classList.add('active');
+});
+
+// Demo data & render (simplified from previous)
+const STATE = {
+  currentPrize: "G5",
+  prizes: {
+    DB: ["78555"],
+    G1: ["02743"],
+    G2: ["81234","90321"],
+    G3: ["34812","57290","00213","99120","44113","77002"],
+    G4: ["6032","9182","5578","1290"],
+    G5: ["7453","2231","9910","— —", "— —", "— —"],
+    G6: ["•••","•••","•••"],
+    G7: ["••","••","••","••"]
+  }
+};
+const ORDER = ["DB","G1","G2","G3","G4","G5","G6","G7"];
+function el(tag, cls, html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
+function chunk2(s){ const arr=[]; for(let i=0;i<s.length;i+=2){ arr.push(s.slice(i,i+2)); } return arr; }
+function last2(s){ s = s.replace(/\s/g,''); if (s.length>=2) return s.slice(-2); return s.padStart(2,'0'); }
+function renderRows(container, data, isLive=false){
+  container.innerHTML='';
+  ORDER.forEach(pr=>{
+    const row = el('div','prize-row' + (isLive && pr===STATE.currentPrize?' current':''));
+    row.appendChild(el('div','p-label', pr));
+    const nums = el('div','p-numbers');
+    const list = data.prizes[pr];
+    if(pr==="DB"){ nums.appendChild(el('div','ball big', list[0])); }
+    else{
+      list.forEach((s, idx)=>{
+        if (isLive && (s.includes("•") || s.includes("—"))) nums.appendChild(el('div','ball shimmer ghost', s));
+        else{ chunk2(s).forEach(n => nums.appendChild(el('div','ball', n))); }
+        if (idx < list.length-1) nums.appendChild(el('span','sep', '•'));
+      });
+    }
+    row.appendChild(nums);
+    container.appendChild(row);
+  });
+}
+function renderLive(){ renderRows(document.getElementById('liveWrap'), STATE, true); updateHeads(); }
+function updateHeads(){
+  const heads = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]};
+  ORDER.forEach(pr=>{
+    STATE.prizes[pr].forEach(s=>{
+      if (s.includes("•") || s.includes("—")) return;
+      const l2 = last2(s); const h = Number(l2[0]); heads[h].push(l2);
+    });
+  });
+  const tbody = document.querySelector('#headsTable tbody'); tbody.innerHTML = '';
+  for (let h=0; h<=9; h++){
+    const tr = el('tr');
+    tr.appendChild(el('td','head-cell', String(h)));
+    const td = el('td','nums-cell');
+    if (heads[h].length){ heads[h].sort((a,b)=>a.localeCompare(b)); heads[h].forEach(n=> td.appendChild(el('span','pill', n))); }
+    else td.innerHTML = '<span class="muted">—</span>';
+    tr.appendChild(td); tbody.appendChild(tr);
+  }
+}
+renderLive();
+
+// Chatbox
+const fab = document.getElementById('fab');
+const chat = document.getElementById('chat');
+const chatBody = document.getElementById('chatBody');
+const input = document.getElementById('chatInput');
+document.getElementById('close').onclick = ()=> chat.classList.remove('show');
+document.getElementById('minimize').onclick = ()=> chat.classList.toggle('show');
+fab.onclick = ()=> chat.classList.toggle('show');
+document.getElementById('sendBtn').onclick = sendMsg;
+input.addEventListener('keydown', e=>{ if(e.key==='Enter') sendMsg(); });
+
+function sendMsg(){
+  const t = input.value.trim(); if(!t) return;
+  chatBody.appendChild(el('div','msg me', t));
+  input.value='';
+  setTimeout(()=>{
+    chatBody.appendChild(el('div','msg bot', 'Demo: em đã nhận câu hỏi "'+t+'". Kết nối API để trả lời theo dữ liệu thực.'));
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }, 400);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+</script>
+</body>
+</html>
