@@ -1,298 +1,244 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>XS Miền Bắc — Gold Header with 2-way Arrows</title>
-<meta name="color-scheme" content="dark">
-<style>
-  :root{
-    --bg:#0a0a0a; --panel:#111214; --panel-2:#141414; --glass:rgba(255,255,255,.06);
-    --text:#FAFAFA; --muted:#D7D7D7; --gold:#FFD54A; --gold-2:#FFC107; --gold-3:#FFB300;
-    --border:#2a2a2a; --radius:16px; --shadow:0 18px 48px rgba(0,0,0,.6);
-    --ball-h:42px; --ball-gap:8px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
-    background:
-      radial-gradient(900px 600px at -10% -10%, rgba(255,213,74,.10) 0%, transparent 60%),
-      radial-gradient(900px 600px at 110% 0%, rgba(255,193,7,.10) 0%, transparent 60%), var(--bg);
-    -webkit-tap-highlight-color: transparent;
-  }
-  a{color:inherit;text-decoration:none}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Xổ Số Thần Đèn — Gold Ribbon + Chatbox + Tabs Tách Riêng</title>
+  <meta name="color-scheme" content="dark">
+  <style>
+    :root{
+      --bg:#0a0a0a; --panel:#111214; --glass:rgba(255,255,255,.06);
+      --text:#FAFAFA; --muted:#D7D7D7; --gold:#FFD54A; --gold-2:#FFC107; --gold-3:#FFB300;
+      --border:#2a2a2a; --radius:16px; --shadow:0 18px 48px rgba(0,0,0,.6);
+      --ball-h:44px; --ball-gap:10px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--text);background:var(--bg);-webkit-tap-highlight-color:transparent}
+    body{background:
+            radial-gradient(900px 600px at -10% -10%, rgba(255,213,74,.10) 0%, transparent 60%),
+            radial-gradient(900px 600px at 110% 0%, rgba(255,193,7,.10) 0%, transparent 60%), var(--bg);background-attachment:fixed}
 
-  .header{position:sticky;top:0;z-index:80;background:linear-gradient(180deg, rgba(10,10,10,.96), rgba(10,10,10,.78));backdrop-filter:saturate(140%) blur(12px);border-bottom:1px solid var(--border)}
-  .header .inner{max-width:1100px;margin:0 auto;padding:10px 12px;display:flex;align-items:center;gap:12px}
-  .logo{width:36px;height:36px;border-radius:12px;background:conic-gradient(from 120deg at 50% 50%, var(--gold), var(--gold-2), var(--gold-3), var(--gold));display:grid;place-items:center;font-weight:900;color:#111;box-shadow:0 8px 24px rgba(255,213,74,.25)}
-  .brand{display:flex;gap:8px;align-items:center}
-  .title{font-weight:900;letter-spacing:.3px}
-  .hamb{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);display:grid;place-items:center}
-  .user{width:34px;height:34px;border-radius:999px;background:#1a1a1a;border:1px solid var(--border);display:grid;place-items:center}
-  .spacer{flex:1}
+    /* Header */
+    .header{position:sticky;top:0;z-index:80;background:linear-gradient(180deg,rgba(10,10,10,.96),rgba(10,10,10,.78));backdrop-filter:saturate(140%) blur(14px);border-bottom:1px solid var(--border)}
+    .header .inner{max-width:1100px;margin:0 auto;padding:10px 12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .logo{width:38px;height:38px;border-radius:12px;background:conic-gradient(from 120deg,var(--gold),var(--gold-2),var(--gold-3),var(--gold));display:grid;place-items:center;font-weight:900;color:#111;font-size:18px;box-shadow:0 8px 26px rgba(255,213,74,.3)}
+    .brand{display:flex;gap:10px;align-items:center}
+    .title{font-weight:900;letter-spacing:.4px;font-size:19px}
+    .subtitle{margin-top:4px;color:var(--gold);font-weight:800;font-size:15px;letter-spacing:1px;text-shadow:0 0 12px rgba(255,213,74,.5)}
+    .hamb,.user{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);display:grid;place-items:center;cursor:pointer}
+    .spacer{flex:1}
 
-  .ribbon-wrap{position:relative;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:linear-gradient(180deg,#121212,#0e0e0e)}
-  .ribbon{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:10px 44px 12px;scroll-behavior:smooth}
-  .ribbon::-webkit-scrollbar{display:none}
-  .item{min-width:210px;max-width:210px;background:#0f0f0f;border:1px solid var(--border);border-radius:14px;padding:10px;color:#fff;display:grid;gap:8px;box-shadow:0 10px 24px rgba(0,0,0,.35)}
-  .item .tag{color:#ffefc2;font-weight:900;font-size:12px;letter-spacing:.4px}
-  .item .icon{font-size:30px;color:var(--gold)}
-  .item .title{font-weight:800}
-  .item .muted{color:#d0d0d0;font-size:12px}
-  .badge{margin-left:6px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;font-weight:900;border-radius:999px;padding:2px 8px;font-size:12px}
-  .arrow-btn{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:#0e0e0e;display:grid;place-items:center;color:#fff;opacity:.9}
-  .arrow-btn:hover{box-shadow:0 6px 16px rgba(255,213,74,.18)}
-  .arrow-left{left:6px}
-  .arrow-right{right:6px}
+    /* Gold Ribbon */
+    .ribbon-wrap{position:relative;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:linear-gradient(180deg,#121212,#0e0e0e)}
+    .ribbon{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:14px 50px;scroll-behavior:smooth}
+    .ribbon::-webkit-scrollbar{display:none}
+    .item{min-width:218px;background:#0f0f0f;border:1px solid var(--border);border-radius:14px;padding:12px;color:#fff;display:grid;gap:6px;box-shadow:0 10px 26px rgba(0,0,0,.4);transition:.25s}
+    .item:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(255,193,7,.18)}
+    .item .tag{color:#ffefc2;font-weight:900;font-size:11px;letter-spacing:.6px}
+    .item .icon{font-size:34px}
+    .item .title{font-weight:800;font-size:15px}
+    .item .muted{color:#d0d0d0;font-size:12px}
+    .badge{margin-left:6px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;font-weight:900;border-radius:999px;padding:2px 9px;font-size:11px}
+    .arrow-btn{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:#0e0e0e;display:grid;place-items:center;color:#fff;opacity:.8;cursor:pointer;z-index:10;transition:.2s}
+    .arrow-btn:hover{opacity:1;background:rgba(255,193,7,.15);box-shadow:0 6px 16px rgba(255,193,7,.25)}
+    .arrow-left{left:6px} .arrow-right{right:6px}
 
-  .tabs-wrap{position:relative;border-bottom:1px solid var(--border);background:#101010}
-  .tabs-strip{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding:10px 44px;scroll-behavior:smooth}
-  .tabs-strip::-webkit-scrollbar{display:none}
-  .tab{white-space:nowrap;font-weight:900;color:#fff;opacity:.9}
-  .tab.active{color:#111;background:linear-gradient(135deg,var(--gold),var(--gold-2));border-radius:999px;padding:6px 12px;box-shadow:0 6px 16px rgba(255,193,7,.2)}
-  .tabs-arrow{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:#0f0f0f;display:grid;place-items:center;color:#fff}
-  .tabs-left{left:6px} .tabs-right{right:6px}
+    /* Tabs vùng */
+    .tabs1{position:relative;background:#101010;border-bottom:1px solid var(--border)}
+    .tabs-strip{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:12px 50px;scroll-behavior:smooth}
+    .tabs-strip::-webkit-scrollbar{display:none}
+    .tab{white-space:nowrap;font-weight:900;color:#fff;opacity:.9;padding:7px 14px;border-radius:999px;transition:.2s}
+    .tab.active{color:#111;background:linear-gradient(135deg,var(--gold),var(--gold-2));box-shadow:0 6px 16px rgba(255,193,7,.25)}
+    .tabs-arrow{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:#0f0f0f;display:grid;place-items:center;color:#fff;cursor:pointer}
 
-  .container{max-width:1100px;margin:0 auto;padding:12px}
-  .card{background:linear-gradient(180deg,var(--glass),transparent),var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-top:12px}
-  .card header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg, rgba(255,213,74,.08), rgba(255,193,7,.05)); color:#fff}
-  .card .body{padding:12px}
+    /* Tabs ngày */
+    .days-wrap{background:#0f0f0f;border-bottom:1px solid var(--border)}
+    .days{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:10px 50px;scroll-behavior:smooth}
+    .days::-webkit-scrollbar{display:none}
+    .day{white-space:nowrap;font-weight:800;color:#ddd;border:1px solid #2e2e2e;border-radius:999px;padding:7px 16px;cursor:pointer;transition:.2s}
+    .day.active{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;border-color:var(--gold);box-shadow:0 4px 12px rgba(255,213,74,.3)}
 
-  .prize-row{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:16px;background:#121315;padding:10px 12px;margin-bottom:10px;position:relative}
-  .p-label{min-width:58px;text-align:center;font-weight:900;color:#fff;background:linear-gradient(135deg, rgba(255,213,74,.14), rgba(255,193,7,.08));border:1px solid #2f2f2f;border-radius:10px;padding:6px 0}
-  .p-numbers{display:flex;flex-wrap:wrap;gap:var(--ball-gap);max-height:calc(var(--ball-h)*2 + var(--ball-gap));overflow:hidden;width:100%}
-  .ball{height:var(--ball-h);padding:0 14px;display:grid;place-items:center;border-radius:12px;font-weight:900;background:linear-gradient(135deg,#1a1a1a,#101010);border:1px solid #2f2f2f;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.45)}
-  .ball.big{height:54px;padding:0 18px;border-radius:14px;background:linear-gradient(135deg,#1f1f1f,#0f0f0f);border-color:#3a3a3a;font-size:20px;box-shadow:0 8px 22px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,213,74,.18)}
-  .sep{opacity:.6;color:#bdbdbd}
-  .ghost{color:#9e9e9e}
-  .shimmer{position:relative;overflow:hidden}
-  .shimmer::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.25) 18%,transparent 36%);transform:translateX(-120%);animation:shine 1.3s linear infinite}
-  @keyframes shine{to{transform:translateX(120%)}}
-  .pop{animation:pop .36s ease}
-  @keyframes pop{from{transform:scale(.85);filter:brightness(1.25)}to{transform:scale(1)}}
-  .prize-row.current{box-shadow:0 0 0 2px rgba(255,213,74,.45), 0 0 0 12px rgba(255,213,74,.18), inset 0 0 20px rgba(255,213,74,.14)}
+    /* Nội dung */
+    .container{max-width:1100px;margin:0 auto;padding:14px}
+    .card{background:linear-gradient(180deg,var(--glass),transparent),var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+    .card header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(255,213,74,.08),rgba(255,193,7,.05));font-weight:800;font-size:17px}
+    .card .body{padding:16px}
 
-  .heads{width:100%;border-collapse:separate;border-spacing:0 10px}
-  .heads th, .heads td{font-size:14px;padding:10px;border-top:1px solid #2f2f2f;border-bottom:1px solid #2f2f2f;background:#111214}
-  .heads th:first-child, .heads td:first-child{border-left:1px solid #2f2f2f;border-top-left-radius:12px;border-bottom-left-radius:12px}
-  .heads th:last-child, .heads td:last-child{border-right:1px solid #2f2f2f;border-top-right-radius:12px;border-bottom-right-radius:12px}
-  .head-cell{font-weight:900;color:#fff;min-width:44px;text-align:center;background:linear-gradient(180deg, rgba(255,213,74,.16), rgba(255,193,7,.08));border-radius:8px}
-  .nums-cell{display:flex;flex-wrap:wrap;gap:8px}
-  .pill{padding:6px 10px;border-radius:10px;border:1px solid #3a3a3a;background:linear-gradient(135deg,#171717,#0f0f0f);font-weight:800;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.45)}
+    /* Kết quả */
+    .prize-row{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:16px;background:#121315;padding:12px;margin-bottom:12px;position:relative}
+    .prize-row.current{box-shadow:0 0 0 3px rgba(255,213,74,.5),0 0 30px rgba(255,213,74,.3);border-color:var(--gold)!important}
+    .p-label{min-width:62px;text-align:center;font-weight:900;color:var(--gold);background:rgba(255,213,74,.15);border-radius:12px;padding:6px 0}
+    .p-numbers{display:flex;flex-wrap:wrap;gap:var(--ball-gap)}
+    .ball{height:var(--ball-h);min-width:56px;padding:0 12px;display:grid;place-items:center;border-radius:14px;font-weight:900;background:linear-gradient(135deg,#1a1a1a,#101010);border:1px solid #2f2f2f;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+    .ball.big{height:62px;min-width:92px;border-radius:18px;background:linear-gradient(135deg,#1f1f1f,#0f0f0f);border:2px solid var(--gold);font-size:26px;box-shadow:0 0 30px rgba(255,213,74,.5),inset 0 0 20px rgba(255,213,74,.3)}
+    .shimmer{position:relative;overflow:hidden}
+    .shimmer::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent,rgba(255,255,255,.3),transparent);transform:translateX(-150%);animation:shine 1.6s infinite}
+    @keyframes shine{to{transform:translateX(150%)}}
+    .pop{animation:pop .42s ease}@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 
-  .footer{margin-top:20px;background:linear-gradient(180deg,#0d0d0d,#0a0a0a);border-top:1px solid var(--border)}
-  .footer .inner{max-width:1100px;margin:0 auto;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-  .copyright{color:#bdbdbd;font-size:12px}
-  .btn.small{padding:8px 10px;border-radius:10px}
-</style>
+    /* Chat */
+    .chat-fab{position:fixed;right:16px;bottom:20px;width:62px;height:62px;border-radius:18px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;display:grid;place-items:center;font-size:30px;box-shadow:0 18px 44px rgba(255,193,7,.4);z-index:90;cursor:pointer}
+    .chat{position:fixed;right:12px;bottom:90px;width:min(540px,94vw);height:min(72vh,640px);display:none;flex-direction:column;border:1px solid var(--border);border-radius:18px;background:#0f0f0f;box-shadow:0 32px 80px rgba(0,0,0,.7);z-index:95}
+    .chat.show{display:flex}
+    .chat header{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border);background:#1a1a1a}
+    .chat .ava{width:40px;height:40px;border-radius semi;border-radius:999px;background:linear-gradient(135deg,var(--gold),var(--gold-2));display:grid;place-items:center;color:#111;font-weight:900;font-size:22px}
+    .chat .title{font-weight:900;font-size:18px}
+    .chat .body{flex:1;overflow:auto;padding:14px;display:grid;gap:12px;background:#0d0d0d}
+    .msg{max-width:88%;padding:12px 16px;border-radius:18px;font-size:15px;line-height:1.5;border:1px solid #2b2b2b}
+    .bot{background:#111214}
+    .me{background:linear-gradient(135deg,#212121,#181818);margin-left:auto}
+    .chat .input-wrap{display:flex;gap:10px;padding:12px;border-top:1px solid var(--border);background:#121212}
+    .chat input{flex:1;padding:14px 16px;border-radius:14px;border:1px solid #2e2e2e;background:#0d0d0d;color:#fff;outline:none;font-size:15px}
+    .chat button{padding:14px 20px;border-radius:14px;border:0;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111;font-weight:900;cursor:pointer}
+  </style>
 </head>
 <body>
 
 <header class="header">
   <div class="inner">
     <div class="hamb">☰</div>
-    <div class="brand"><div class="logo">MB</div><div class="title">Xổ Số <span style="color:var(--gold)">THẦN ĐÈN</span></div></div>
+    <div class="brand">
+      <div class="logo">MB</div>
+      <div>
+        <div class="title">Xổ Số <span style="color:var(--gold)">THẦN ĐÈN</span></div>
+        <div class="subtitle">XỔ SỐ THẦN ĐÈN</div>
+      </div>
+    </div>
     <div class="spacer"></div>
     <div class="user">👤</div>
   </div>
 
+  <!-- Ribbon Gold -->
   <div class="ribbon-wrap">
     <button class="arrow-btn arrow-left" id="rbLeft">◀</button>
     <div class="ribbon" id="ribbon">
-      <a href="#" class="item">
-        <div class="tag">XSMB</div>
-        <div class="icon">📍</div>
-        <div class="title">Điểm Mua Vé Số</div>
-        <div class="muted">Tìm đại lý gần bạn</div>
-      </a>
-      <a href="#" class="item">
-        <div class="tag">AI</div>
-        <div class="icon">💭</div>
-        <div class="title">Đoán Số Giấc Mơ <span class="badge">32</span></div>
-        <div class="muted">Từ điển + thống kê</div>
-      </a>
-      <a href="#" class="item">
-        <div class="tag">AI</div>
-        <div class="icon">💡</div>
-        <div class="title">Dự Đoán Xổ Số Bằng AI <span class="badge">17</span></div>
-        <div class="muted">Gợi ý nóng</div>
-      </a>
-      <a href="#" class="item">
-        <div class="tag">00 <span style="opacity:.8">→</span> 99</div>
-        <div class="icon">🪄</div>
-        <div class="title">Lọc Số Sáng Nhất <span class="badge">79</span></div>
-        <div class="muted">Theo ngày/tuần</div>
-      </a>
-      <a href="#" class="item">
-        <div class="tag">Phong Thuỷ</div>
-        <div class="icon">🧭</div>
-        <div class="title">Số Phong Thuỷ <span class="badge">35</span></div>
-        <div class="muted">Mạng & tuổi</div>
-      </a>
+      <a href="#" class="item"><div class="tag">XSMB</div><div class="icon">📍</div><div class="title">Điểm Mua Vé Số</div><div class="muted">Tìm đại lý gần bạn</div></a>
+      <a href="#" class="item"><div class="tag">AI</div><div class="icon">💭</div><div class="title">Đoán Số Giấc Mơ <span class="badge">32</span></div><div class="muted">Từ điển + thống kê</div></a>
+      <a href="#" class="item"><div class="tag">AI</div><div class="icon">💡</div><div class="title">Dự Đoán Xổ Số Bằng AI <span class="badge">17</span></div><div class="muted">Gợi ý nóng hôm nay</div></a>
+      <a href="#" class="item"><div class="tag">00 → 99</div><div class="icon">🪄</div><div class="title">Lọc Số Sáng Nhất <span class="badge">79</span></div><div class="muted">Theo ngày/tuần</div></a>
+      <a href="#" class="item"><div class="tag">Phong Thuỷ</div><div class="icon">🧭</div><div class="title">Số Phong Thuỷ <span class="badge">35</span></div><div class="muted">Mạng & tuổi</div></a>
     </div>
     <button class="arrow-btn arrow-right" id="rbRight">▶</button>
   </div>
 
-  <div class="tabs-wrap">
-    <button class="tabs-arrow tabs-left" id="tbLeft">◀</button>
-    <div class="tabs-strip" id="tabs">
-      <a href="#" class="tab active">XSMB</a>
-      <a href="#" class="tab">XSMN</a>
-      <a href="#" class="tab">XSMT</a>
-      <a href="#" class="tab">VIETLOTT</a>
-      <a href="#" class="tab">T2</a>
-      <a href="#" class="tab">T3</a>
-      <a href="#" class="tab">T4</a>
-      <a href="#" class="tab">T5</a>
-      <a href="#" class="tab">T6</a>
-      <a href="#" class="tab">T7</a>
-      <a href="#" class="tab">CN</a>
+  <!-- Tabs vùng -->
+  <div class="tabs1">
+    <button class="tabs-arrow tabs-left" id="tbLeft1">◀</button>
+    <div class="tabs-strip" id="regionTabs">
+      <div class="tab active">XSMB</div>
+      <div class="tab">XSMN</div>
+      <div class="tab">XSMT</div>
+      <div class="tab">VIETLOTT</div>
     </div>
-    <button class="tabs-arrow tabs-right" id="tbRight">▶</button>
+    <button class="tabs-arrow tabs-right" id="tbRight1">▶</button>
+  </div>
+
+  <!-- Tabs ngày -->
+  <div class="days-wrap">
+    <button class="tabs-arrow tabs-left" id="tbLeft2">◀</button>
+    <div class="days" id="dayTabs">
+      <div class="day">T2</div><div class="day">T3</div><div class="day active">T4</div><div class="day">T5</div><div class="day">T6</div><div class="day">T7</div><div class="day">CN</div>
+    </div>
+    <button class="tabs-arrow tabs-right" id="tbRight2">▶</button>
   </div>
 </header>
 
 <main class="container">
   <section class="card">
-    <header>
-      <strong>XSMB — Hôm nay (đang quay)</strong>
-      <div class="muted">Shimmer: sắp quay • Pop-in: vừa ra • Glow: giải hiện tại</div>
-    </header>
+    <header><strong>XSMB — Thứ Tư, 19/11/2025 • Đang quay</strong></header>
     <div class="body" id="liveWrap"></div>
   </section>
-
   <section class="card">
-    <header><strong>Thống kê đầu (hôm nay)</strong><span class="muted">Từ số đã về</span></header>
+    <header><strong>Thống kê đầu số hôm nay</strong></header>
     <div class="body">
       <table class="heads" id="headsTable">
-        <thead><tr><th class="head-cell">Đầu</th><th>Lô tô</th></tr></thead>
+        <thead><tr><th>Đầu</th><th>Lô tô</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </section>
-
   <section class="card">
-    <header><strong>3 ngày gần nhất</strong><span class="muted">Mở rộng để xem</span></header>
+    <header><strong>3 ngày gần nhất</strong></header>
     <div class="body" id="past"></div>
   </section>
 </main>
 
-<footer class="footer">
-  <div class="inner">
-    <div class="copyright">© 2025 Xổ Số Thần Đèn</div>
-    <button class="btn small">🧞 Thần Đèn</button>
+<!-- Chat Thần Đèn -->
+<div class="chat-fab" id="fab">🧞</div>
+<div class="chat" id="chat">
+  <header>
+    <div class="ava">🧞</div>
+    <div class="title">Thần Đèn AI</div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <div class="circle" id="minimize">—</div>
+      <div class="circle" id="close">✕</div>
+    </div>
+  </header>
+  <div class="body" id="chatBody">
+    <div class="msg bot">Chào Anh/Chị! Em là Thần Đèn AI đây ạ 🧞‍♂️</div>
+    <div class="msg bot">Hỏi em gì cũng được: giấc mơ, soi cầu, phong thủy, kết quả...</div>
   </div>
-</footer>
+  <div class="input-wrap">
+    <input id="chatInput" placeholder="Nhập tin nhắn...">
+    <button id="sendBtn">Gửi</button>
+  </div>
+</div>
 
 <script>
-function setupArrows(scrollEl, leftBtn, rightBtn){
-  const el = document.getElementById(scrollEl);
-  const L = document.getElementById(leftBtn);
-  const R = document.getElementById(rightBtn);
-  function update(){
-    const max = el.scrollWidth - el.clientWidth - 1;
-    L.style.opacity = el.scrollLeft > 0 ? 1 : .3;
-    R.style.opacity = el.scrollLeft < max ? 1 : .3;
+  // Arrow scroll
+  function setupArrows(el, left, right) {
+    const e = document.getElementById(el);
+    const l = document.getElementById(left);
+    const r = document.getElementById(right);
+    const update = () => {
+      const max = e.scrollWidth - e.clientWidth;
+      l.style.opacity = e.scrollLeft > 10 ? '1' : '0.4';
+      r.style.opacity = e.scrollLeft < max - 10 ? '1' : '0.4';
+    };
+    l.onclick = () => e.scrollBy({left: -220, behavior: 'smooth'});
+    r.onclick = () => e.scrollBy({left: 220, behavior: 'smooth'});
+    e.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    update();
   }
-  L.addEventListener('click', ()=>{ el.scrollBy({left:-240,behavior:'smooth'}); setTimeout(update, 320); });
-  R.addEventListener('click', ()=>{ el.scrollBy({left:240,behavior:'smooth'}); setTimeout(update, 320); });
-  el.addEventListener('scroll', update);
-  window.addEventListener('resize', update);
-  update();
-}
-setupArrows('ribbon','rbLeft','rbRight');
-setupArrows('tabs','tbLeft','tbRight');
+  setupArrows('ribbon', 'rbLeft', 'rbRight');
+  setupArrows('regionTabs', 'tbLeft1', 'tbRight1');
+  setupArrows('dayTabs', 'tbLeft2', 'tbRight2');
 
-const STATE = {currentPrize:"G5",prizes:{DB:["68295"],G1:["02743"],G2:["81234","90321"],G3:["34812","57290","00213","99120","44113","77002"],G4:["6032","9182","5578","1290"],G5:["7453","2231","9910","— —","— —","— —"],G6:["•••","•••","•••"],G7:["••","••","••","••"]}};
-const D1 = {prizes:{DB:["68295"],G1:["02743"],G2:["81234","90321"],G3:["34812","57290","00213","99120","44113","77002"],G4:["6032","9182","5578","1290"],G5:["7453","2231","9910","5501","7723","1382"],G6:["783","031","690"],G7:["28","13","55","09"]}};
-const D2 = {prizes:{DB:["77102"],G1:["34688"],G2:["44021","12890"],G3:["11345","90311","44822","77120","99001","22057"],G4:["7788","1102","5690","4421"],G5:["7721","5513","0022","1901","7123","3382"],G6:["521","765","310"],G7:["17","44","68","12"]}};
-const D3 = {prizes:{DB:["44550"],G1:["11823"],G2:["22311","90022"],G3:["77812","11290","00813","99120","44143","77008"],G4:["6039","9184","5571","1299"],G5:["7451","2235","9914","5507","7729","1380"],G6:["783","037","620"],G7:["27","39","56","04"]}};
-const ORDER = ["DB","G1","G2","G3","G4","G5","G6","G7"];
-function el(tag, cls, html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
-function chunk2(s){ const arr=[]; for(let i=0;i<s.length;i+=2){ arr.push(s.slice(i,i+2)); } return arr; }
-function last2(s){ s = s.replace(/\s/g,''); if (s.length>=2) return s.slice(-2); return s.padStart(2,'0'); }
-function renderRows(container, data, isLive=false){
-  container.innerHTML='';
-  ORDER.forEach(pr=>{
-    const row = el('div','prize-row' + (isLive && pr===STATE.currentPrize?' current':''));
-    row.appendChild(el('div','p-label', pr));
-    const nums = el('div','p-numbers');
-    const list = data.prizes[pr];
-    if(pr==="DB"){ nums.appendChild(el('div','ball big', list[0])); }
-    else{
-      list.forEach((s, idx)=>{
-        if (isLive && (s.includes("•") || s.includes("—"))) nums.appendChild(el('div','ball shimmer ghost', s));
-        else{ chunk2(s).forEach(n => nums.appendChild(el('div','ball', n))); }
-        if (idx < list.length-1) nums.appendChild(el('span','sep', '•'));
+  // LIVE + kết quả
+  const ORDER = ["DB","G1","G2","G3","G4","G5","G6","G7"];
+  const STATE = {current:"G5",prizes:{DB:["837291"],G1:["74193"],G2:["28560","91472"],G3:["23456","78901","22344","55678","99012","33445"],G4:["6032","9182","5578","1290"],G5:["7453","2231","9910","— —","— —","— —"],G6:["•••","•••","•••"],G7:["••","••","••","••"]}};
+  const D1 = {prizes:{DB:["682950"],G1:["02743"],G2:["81234","90321"],G3:["34812","57290","00213","99120","44113","77002"],G4:["6032","9182","5578","1290"],G5:["7453","2231","9910","5501","7723","1382"],G6:["783","031","690"],G7:["28","13","55","09"]}};
+  const D2 = {prizes:{DB:["771027"],G1:["34688"],G2:["44021","12890"],G3:["11345","90311","44822","77120","99001","22057"],G4:["7788","1102","5690","4421"],G5:["7721","5513","0022","1901","7123","3382"],G6:["521","765","310"],G7:["17","44","68","12"]}};
+  const D3 = {prizes:{DB:["445509"],G1:["11823"],G2:["22311","90022"],G3:["77812","11290","00813","99120","44143","77008"],G4:["6039","9184","5571","1299"],G5:["7451","2235","9914","5507","7729","1380"],G6:["783","037","620"],G7:["27","39","56","04"]}};
+
+  function el(t,c,h){const e=document.createElement(t);if(c)e.className=c;if(h!==undefined)e.innerHTML=h;return e}
+  function last2(s){s=s.replace(/\D/g,'');return s.length>=2?s.slice(-2):s.padStart(2,'0')}
+
+  function renderRows(cont,data,isLive=false){
+    cont.innerHTML='';
+    ORDER.forEach(p=>{const row=el('div','prize-row'+(isLive&&p===STATE.current?' current':''));
+      row.appendChild(el('div','p-label',p==='DB'?'ĐB':p));
+      const nums=el('div','p-numbers');
+      if(p==='DB') nums.appendChild(el('div','ball big',data.prizes.DB[0]));
+      else data.prizes[p].forEach(n=>{
+        if(isLive && (n.includes('—')||n.includes('•'))) nums.appendChild(el('div','ball shimmer',n));
+        else n.match(/.{1,2}/g).forEach(x=>nums.appendChild(el('div','ball',x)));
       });
-    }
-    row.appendChild(nums);
-    container.appendChild(row);
-  });
-}
-function renderLive(){ renderRows(document.getElementById('liveWrap'), STATE, true); updateHeads(); }
-function updateHeads(){
-  const heads = {0:[],1:[],2:[],3:[],4:[],5:[],6:[],7:[],8:[],9:[]};
-  ORDER.forEach(pr=>{
-    STATE.prizes[pr].forEach(s=>{
-      if (s.includes("•") || s.includes("—")) return;
-      const l2 = last2(s); const h = Number(l2[0]); heads[h].push(l2);
+      row.appendChild(nums); cont.appendChild(row);
     });
-  });
-  const tbody = document.querySelector('#headsTable tbody'); tbody.innerHTML = '';
-  for (let h=0; h<=9; h++){
-    const tr = el('tr','row-'+h);
-    tr.appendChild(el('td','head-cell', String(h)));
-    const td = el('td','nums-cell');
-    if (heads[h].length){ heads[h].sort((a,b)=>a.localeCompare(b)); heads[h].forEach(n=> td.appendChild(el('span','pill', n))); }
-    else td.innerHTML = '<span class="muted">—</span>';
-    tr.appendChild(td); tbody.appendChild(tr);
   }
-}
-function renderPast(){
-  const past = document.getElementById('past');
-  const wrap = el('div',null);
-  [D1,D2,D3].forEach((d,idx)=>{
-    const title = ['Hôm qua','2 ngày trước','3 ngày trước'][idx];
-    const box = el('div','',`<div style="font-weight:800;margin:6px 0">${title}</div>`);
-    const rows = el('div'); renderRows(rows, d, false); box.appendChild(rows);
-    wrap.appendChild(box);
-  });
-  past.innerHTML=''; past.appendChild(wrap);
-}
-const QUEUE = [
-  {prize:'G5', index:3, value:'5501'},
-  {prize:'G5', index:4, value:'7723'},
-  {prize:'G5', index:5, value:'1382'},
-  {prize:'G6', index:0, value:'783'},
-  {prize:'G6', index:1, value:'031'},
-  {prize:'G6', index:2, value:'690'},
-  {prize:'G7', index:0, value:'28'},
-  {prize:'G7', index:1, value:'13'},
-  {prize:'G7', index:2, value:'55'},
-  {prize:'G7', index:3, value:'09'}
-];
-function revealNext(){
-  if (!QUEUE.length){ STATE.currentPrize = 'DONE'; return; }
-  const step = QUEUE.shift();
-  STATE.currentPrize = step.prize;
-  STATE.prizes[step.prize][step.index] = step.value;
-  renderLive();
-  const rows = Array.from(document.querySelectorAll('.prize-row'));
-  const row = rows.find(r => r.querySelector('.p-label').textContent === step.prize);
-  if (row){
-    const balls = row.querySelectorAll('.ball');
-    balls.forEach(b => b.classList.add('pop'));
-    setTimeout(()=> balls.forEach(b=>b.classList.remove('pop')), 500);
-  }
-}
-function startAutoReveal(){
-  renderLive(); renderPast();
-  let t = 0;
-  const id = setInterval(()=>{ revealNext(); t++; if (t>10 || !QUEUE.length) clearInterval(id); }, 1600);
-}
-startAutoReveal();
+  function updateHeads(){/* giữ nguyên như cũ */ const heads={};for(let i=0;i<10;i++)heads[i]=[];ORDER.forEach(p=>STATE.prizes[p].forEach(n=>{if(!n.includes('—')&&!n.includes('•'))heads[Number(last2(n)[0])].push(last2(n))}));const tbody=document.querySelector('#headsTable tbody');tbody.innerHTML='';for(let h=0;h<10;h++){tbody.innerHTML+=`<tr><td style="font-weight:900;color:var(--gold)">${h}</td><td>${heads[h].length?heads[h].sort().map(x=>`<span class="pill">${x}</span>`).join(''):'—'}</td></tr>`;}}
+  function renderPast(){const p=document.getElementById('past');p.innerHTML='';[D1,D2,D3].forEach((d,i)=>{const t=['Hôm qua','2 ngày trước','3 ngày trước'][i];const box=el('div','',`<div style="font-weight:800;color:var(--gold);margin:8px 0">${t}</div>`);const r=el('div');renderRows(r,d);box.appendChild(r);p.appendChild(box);});}
+
+  renderRows(document.getElementById('liveWrap'),STATE,true); updateHeads(); renderPast();
+
+  // Chat
+  const fab=document.getElementById('fab'),chat=document.getElementById('chat');
+  fab.onclick=()=>chat.classList.toggle('show');
+  document.getElementById('close').onclick=()=>chat.classList.remove('show');
+  document.getElementById('minimize').onclick=()=>chat.classList.toggle('show');
+  document.getElementById('sendBtn').onclick=()=>{const i=document.getElementById('chatInput');if(!i.value.trim())return;document.getElementById('chatBody').innerHTML+=`<div class="msg me">${i.value}</div>`;i.value='';setTimeout(()=>{document.getElementById('chatBody').innerHTML+=`<div class="msg bot">Em đang xử lý "${i.value}"... (kết nối API thật thì trả lời chuẩn luôn nha anh!)</div>`;document.getElementById('chatBody').scrollTop=document.getElementById('chatBody').scrollHeight;},600);};
 </script>
 </body>
 </html>
