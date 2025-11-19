@@ -9,19 +9,14 @@ import java.util.Map;
 @RequestMapping("/api/lottery")
 @CrossOrigin(origins = "*")
 public class RecommendController {
+    private final RecommendService svc;
 
-    private final RecommendService service;
-
-    public RecommendController(RecommendService service) {
-        this.service = service;
+    public RecommendController(RecommendService s) {
+        this.svc = s;
     }
 
     @GetMapping("/recommend")
-    public List<Map<String,Object>> recommend(
-            @RequestParam(defaultValue = "MB") String region,
-            @RequestParam(defaultValue = "30") int days,
-            @RequestParam(defaultValue = "10") int k
-    ) {
-        return service.recommend(region, days, k);
+    public List<Map<String, Object>> recommend(@RequestParam(defaultValue = "MB") String region, @RequestParam(defaultValue = "30") int days, @RequestParam(defaultValue = "10") int k) {
+        return svc.recommend(region, days, k);
     }
 }

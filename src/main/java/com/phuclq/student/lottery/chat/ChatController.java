@@ -1,5 +1,6 @@
 package com.phuclq.student.lottery.chat;
 
+import com.phuclq.student.lottery.dream.DreamService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotBlank;
@@ -9,22 +10,34 @@ import java.util.Map;
 @RequestMapping("/api/chat")
 @CrossOrigin(origins = "*")
 public class ChatController {
+    private final ChatService stats;
+    private final DreamService dream;
 
-    private final ChatService chatService;
+    public ChatController(ChatService s, DreamService d) {
+        this.stats = s;
+        this.dream = d;
+    }
 
-    public ChatController(ChatService chatService) {
-        this.chatService = chatService;
+    @PostMapping
+    public Map<String, Object> chat(@RequestBody ChatRequest b) {
+        String type = b.type == null ? "stats" : b.type.trim().toLowerCase();
+        if (type.equals("dream")) {
+            String region = b.region == null ? "MB" : b.region;
+            int days = b.days == null ? 30 : b.days;
+            int topK = b.topK == null ? 10 : Math.max(1, Math.min(b.topK, 20));
+            return dream.interpretAndRecommend(b.message, region, days, topK);
+        }
+        boolean includeSql = b.includeSql != null && b.includeSql;
+        return stats.handleStatsMessage(b.message, includeSql);
     }
 
     public static class ChatRequest {
         @NotBlank
         public String message;
+        public String type;
+        public String region;
+        public Integer days;
+        public Integer topK;
         public Boolean includeSql;
-    }
-
-    @PostMapping
-    public Map<String,Object> chat(@RequestBody ChatRequest body) {
-        boolean includeSql = body.includeSql != null && body.includeSql;
-        return chatService.handleMessage(body.message, includeSql);
     }
 }

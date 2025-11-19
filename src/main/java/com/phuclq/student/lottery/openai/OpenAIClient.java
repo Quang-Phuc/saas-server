@@ -1,63 +1,41 @@
 package com.phuclq.student.lottery.openai;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.RestClientResponseException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class OpenAIClient {
-
     private final RestTemplate rest = new RestTemplate();
-    private final ObjectMapper mapper = new ObjectMapper();
-
     @Value("${openai.api.key:}")
     private String apiKey;
-
     @Value("${openai.model:gpt-4o-mini}")
-    private String defaultModel;
+    private String model;
 
-    public String chat(String systemPrompt, String userMessage) {
-        return chat(systemPrompt, userMessage, defaultModel);
-    }
-
-    public String chat(String systemPrompt, String userMessage, String model) {
-        if (apiKey == null || apiKey.isBlank()) {
-            return "[OpenAI API key is not configured]";
-        }
-
+    public String chat(String sys, String usr) {
+        if (apiKey == null || apiKey.isBlank()) return "[OpenAI key missing]";
         String url = "https://api.openai.com/v1/chat/completions";
-
         Map<String, Object> body = new HashMap<>();
         body.put("model", model);
-        List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system", "content", systemPrompt));
-        messages.add(Map.of("role", "user", "content", userMessage));
-        body.put("messages", messages);
-        body.put("temperature", 0.2);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
-
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-        try {
-            Map<?, ?> response = rest.postForObject(url, request, Map.class);
-            if (response == null) return "[Empty OpenAI response]";
-            List<?> choices = (List<?>) response.get("choices");
-            if (choices == null || choices.isEmpty()) return "[No choices from OpenAI]";
-            Map<?, ?> choice0 = (Map<?, ?>) choices.get(0);
-            Map<?, ?> message = (Map<?, ?>) choice0.get("message");
-            return (String) message.get("content");
-        } catch (RestClientResponseException e) {
-            return "[OpenAI error] " + e.getRawStatusCode() + " " + e.getResponseBodyAsString();
-        } catch (Exception e) {
-            return "[OpenAI error] " + e.getMessage();
-        }
+        List<Map<String, String>> msgs = new ArrayList<>();
+        msgs.add(Map.of("role", "system", "content", sys));
+        msgs.add(Map.of("role", "user", "content", usr));
+        body.put("messages", msgs);
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        h.setBearerAuth(apiKey);
+        HttpEntity<Map<String, Object>> req = new HttpEntity<>(body, h);
+        Map<?, ?> resp = rest.postForObject(url, req, Map.class);
+        List<?> choices = (List<?>) resp.get("choices");
+        Map<?, ?> m = (Map<?, ?>) choices.get(0);
+        return (String) ((Map<?, ?>) m.get("message")).get("content");
     }
 }
